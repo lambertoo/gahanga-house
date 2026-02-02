@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAHANGA House Construction Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏗️ GAHANGA House Construction Dashboard</h1>
+            <p class="subtitle">Track your construction finances and spending</p>
+        </header>
+
+        <!-- Summary Cards -->
+        <section class="summary-cards">
+            <div class="card">
+                <div class="card-icon">💰</div>
+                <div class="card-content">
+                    <h3>Total Money Given</h3>
+                    <p class="card-value" id="total-money-in">0</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon">💸</div>
+                <div class="card-content">
+                    <h3>Total Spending</h3>
+                    <p class="card-value" id="total-spending">0</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon">📊</div>
+                <div class="card-content">
+                    <h3>Balance</h3>
+                    <p class="card-value" id="balance">0</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon">📝</div>
+                <div class="card-content">
+                    <h3>Transactions</h3>
+                    <p class="card-value" id="transaction-count">0</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Summary Cards -->
+        <section class="section-cards" id="section-cards">
+            <h2>Spending by Section</h2>
+            <div class="section-cards-grid" id="section-cards-grid">
+                <!-- Section cards will be dynamically generated here -->
+            </div>
+        </section>
+
+        <!-- Filters -->
+        <section class="filters">
+            <h2>Filters</h2>
+            <div class="filter-group">
+                <div class="filter-item">
+                    <label for="date-from">From Date:</label>
+                    <input type="date" id="date-from">
+                </div>
+                <div class="filter-item">
+                    <label for="date-to">To Date:</label>
+                    <input type="date" id="date-to">
+                </div>
+                <div class="filter-item">
+                    <label for="section-filter">Section:</label>
+                    <select id="section-filter">
+                        <option value="">All Sections</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label for="cost-type-filter">Cost Type:</label>
+                    <select id="cost-type-filter">
+                        <option value="">All Cost Types</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label for="transaction-type-filter">Transaction Type:</label>
+                    <select id="transaction-type-filter">
+                        <option value="">All Transactions</option>
+                        <option value="money-in">Money In Only</option>
+                        <option value="spending">Spending Only</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <button id="reset-filters" class="btn-reset">Reset Filters</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts -->
+        <section class="charts">
+            <div class="chart-container">
+                <h3>Spending by Section</h3>
+                <canvas id="section-chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Spending by Cost Type</h3>
+                <canvas id="cost-type-chart"></canvas>
+            </div>
+            <div class="chart-container full-width">
+                <h3>Timeline: Money In vs Spending</h3>
+                <canvas id="timeline-chart"></canvas>
+            </div>
+        </section>
+
+        <!-- Transaction Table -->
+        <section class="transactions">
+            <h2>Transaction Details</h2>
+            <div class="table-container">
+                <table id="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Section</th>
+                            <th>Task / Description</th>
+                            <th>Cost Type</th>
+                            <th>Money In</th>
+                            <th>Money In Method</th>
+                            <th>Spending</th>
+                            <th>Payment Method</th>
+                            <th>Running Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaction-tbody">
+                        <tr>
+                            <td colspan="6" class="loading">Loading data from Google Sheets...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Loading data from Google Sheets...</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
