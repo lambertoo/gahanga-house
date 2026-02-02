@@ -2,6 +2,7 @@
 
 import Papa from 'papaparse';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import ChartCanvas from './charts/ChartCanvas';
 
 function parseNumber(value) {
@@ -221,6 +222,9 @@ async function findSheetByGid(gidValues, sheetName) {
 }
 
 export default function DashboardClient() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [allTransactions, setAllTransactions] = useState([]);
@@ -235,6 +239,23 @@ export default function DashboardClient() {
   });
 
   const [sort, setSort] = useState({ column: null, direction: 'asc' });
+
+  const view = searchParams.get('view') || 'overview';
+  const viewSection = searchParams.get('section') || '';
+  const viewMoneyInMethod = searchParams.get('moneyInMethod') || '';
+  const viewPaymentMethod = searchParams.get('paymentMethod') || '';
+
+  const setView = useCallback(
+    (next) => {
+      const sp = new URLSearchParams(searchParams.toString());
+      Object.entries(next).forEach(([k, v]) => {
+        if (v === undefined || v === null || v === '') sp.delete(k);
+        else sp.set(k, String(v));
+      });
+      router.push(`/?${sp.toString()}`);
+    },
+    [router, searchParams]
+  );
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -327,6 +348,28 @@ export default function DashboardClient() {
     return [...new Set(allTransactions.map((t) => t.section).filter((s) => s && s !== 'Unknown'))].sort();
   }, [allTransactions]);
 
+  const moneyInMethods = useMemo(() => {
+    return [
+      ...new Set(
+        allTransactions
+          .filter((t) => t.moneyIn > 0)
+          .map((t) => t.moneyInMethod)
+          .filter((m) => m && m.trim().length > 0)
+      ),
+    ].sort();
+  }, [allTransactions]);
+
+  const paymentMethods = useMemo(() => {
+    return [
+      ...new Set(
+        allTransactions
+          .filter((t) => t.spending > 0)
+          .map((t) => t.paymentMethod)
+          .filter((m) => m && m.trim().length > 0)
+      ),
+    ].sort();
+  }, [allTransactions]);
+
   const costTypes = useMemo(() => {
     return [...new Set(allTransactions.map((t) => t.costType).filter((c) => c && c !== 'Unknown'))].sort();
   }, [allTransactions]);
@@ -336,7 +379,7 @@ export default function DashboardClient() {
     const dateTo = parseYmdToLocalDate(filters.dateTo);
     if (dateTo) dateTo.setHours(23, 59, 59, 999);
 
-    return allTransactions.filter((t) => {
+    const base = allTransactions.filter((t) => {
       if (dateFrom && t.date && t.date < dateFrom) return false;
       if (dateTo && t.date && t.date > dateTo) return false;
       if (filters.section && t.section !== filters.section) return false;
@@ -345,7 +388,23 @@ export default function DashboardClient() {
       if (filters.transactionType === 'spending' && t.spending === 0) return false;
       return true;
     });
-  }, [allTransactions, filters]);
+
+    // View-level drilldowns (sidebar)
+    if (view === 'section') {
+      if (!viewSection) return base;
+      return base.filter((t) => t.section === viewSection);
+    }
+    if (view === 'money-in') {
+      if (!viewMoneyInMethod) return base.filter((t) => t.moneyIn > 0);
+      return base.filter((t) => t.moneyIn > 0 && (t.moneyInMethod || '') === viewMoneyInMethod);
+    }
+    if (view === 'payment-method') {
+      if (!viewPaymentMethod) return base.filter((t) => t.spending > 0);
+      return base.filter((t) => t.spending > 0 && (t.paymentMethod || '') === viewPaymentMethod);
+    }
+
+    return base;
+  }, [allTransactions, filters, view, viewSection, viewMoneyInMethod, viewPaymentMethod]);
 
   const totals = useMemo(() => {
     const totalMoneyIn = filteredTransactions.reduce((sum, t) => sum + t.moneyIn, 0);
@@ -524,6 +583,150 @@ export default function DashboardClient() {
     };
   }, [filteredTransactions]);
 
+  const moneyInBySectionChart = useMemo(() => {
+    const sectionData = {};
+    filteredTransactions.forEach((t) => {
+      if (t.moneyIn > 0) {
+        sectionData[t.section] = (sectionData[t.section] || 0) + t.moneyIn;
+      }
+    });
+    const labels = Object.keys(sectionData).sort((a, b) => sectionData[b] - sectionData[a]);
+    const data = labels.map((l) => sectionData[l]);
+
+    return {
+      data: {
+        labels,
+        datasets: [
+          {
+            data,
+            backgroundColor: [
+              '#2563eb',
+              '#10b981',
+              '#f59e0b',
+              '#ef4444',
+              '#8b5cf6',
+              '#ec4899',
+              '#06b6d4',
+              '#84cc16',
+              '#f97316',
+              '#6366f1',
+            ],
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { position: 'right' },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const label = context.label || '';
+                const value = formatCurrency(context.parsed);
+                const total = context.dataset.data.reduce((x, y) => x + y, 0);
+                const percentage = total ? ((context.parsed / total) * 100).toFixed(1) : '0.0';
+                return `${label}: ${value} (${percentage}%)`;
+              },
+            },
+          },
+        },
+      },
+    };
+  }, [filteredTransactions]);
+
+  const moneyInByMethodChart = useMemo(() => {
+    const methodData = {};
+    filteredTransactions.forEach((t) => {
+      if (t.moneyIn > 0) {
+        const key = t.moneyInMethod || 'Not specified';
+        methodData[key] = (methodData[key] || 0) + t.moneyIn;
+      }
+    });
+    const labels = Object.keys(methodData).sort((a, b) => methodData[b] - methodData[a]);
+    const data = labels.map((l) => methodData[l]);
+
+    return {
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Money In',
+            data,
+            backgroundColor: '#10b981',
+            borderRadius: 8,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) => formatCurrency(context.parsed.y),
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value) => formatCurrency(value),
+            },
+          },
+        },
+      },
+    };
+  }, [filteredTransactions]);
+
+  const spendingByPaymentMethodChart = useMemo(() => {
+    const methodData = {};
+    filteredTransactions.forEach((t) => {
+      if (t.spending > 0) {
+        const key = t.paymentMethod || 'Not specified';
+        methodData[key] = (methodData[key] || 0) + t.spending;
+      }
+    });
+    const labels = Object.keys(methodData).sort((a, b) => methodData[b] - methodData[a]);
+    const data = labels.map((l) => methodData[l]);
+
+    return {
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Spending',
+            data,
+            backgroundColor: '#ef4444',
+            borderRadius: 8,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) => formatCurrency(context.parsed.y),
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value) => formatCurrency(value),
+            },
+          },
+        },
+      },
+    };
+  }, [filteredTransactions]);
+
   const costTypeChart = useMemo(() => {
     const costTypeData = {};
     filteredTransactions.forEach((t) => {
@@ -652,26 +855,108 @@ export default function DashboardClient() {
     setFilters(next);
   };
 
+  const pageTitle = useMemo(() => {
+    if (view === 'section') return viewSection ? `Section: ${viewSection}` : 'Section';
+    if (view === 'money-in') return viewMoneyInMethod ? `Money In: ${viewMoneyInMethod}` : 'Money In';
+    if (view === 'payment-method') return viewPaymentMethod ? `Spending: ${viewPaymentMethod}` : 'Spending';
+    return 'Overview';
+  }, [view, viewSection, viewMoneyInMethod, viewPaymentMethod]);
+
   return (
-    <div className="container">
-      <header>
-        <h1>🏗️ GAHANGA House Construction Dashboard</h1>
-        <p className="subtitle">Track your construction finances and spending</p>
-      </header>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <div className="sidebar-title">GAHANGA Dashboard</div>
+          <div className="sidebar-subtitle">Construction finance</div>
+        </div>
+
+        <nav className="sidebar-nav">
+          <button
+            className={`nav-item ${view === 'overview' ? 'active' : ''}`}
+            onClick={() => setView({ view: 'overview', section: '', moneyInMethod: '', paymentMethod: '' })}
+            type="button"
+          >
+            Overview
+          </button>
+
+          <div className="nav-section">
+            <div className="nav-section-title">Sections</div>
+            {sections.map((s) => (
+              <button
+                key={s}
+                className={`nav-item ${view === 'section' && viewSection === s ? 'active' : ''}`}
+                onClick={() => setView({ view: 'section', section: s, moneyInMethod: '', paymentMethod: '' })}
+                type="button"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+
+          <div className="nav-section">
+            <div className="nav-section-title">Money In</div>
+            <button
+              className={`nav-item ${view === 'money-in' && !viewMoneyInMethod ? 'active' : ''}`}
+              onClick={() => setView({ view: 'money-in', moneyInMethod: '', section: '', paymentMethod: '' })}
+              type="button"
+            >
+              All Money In
+            </button>
+            {moneyInMethods.map((m) => (
+              <button
+                key={m}
+                className={`nav-item ${view === 'money-in' && viewMoneyInMethod === m ? 'active' : ''}`}
+                onClick={() => setView({ view: 'money-in', moneyInMethod: m, section: '', paymentMethod: '' })}
+                type="button"
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+
+          <div className="nav-section">
+            <div className="nav-section-title">Spending</div>
+            <button
+              className={`nav-item ${view === 'payment-method' && !viewPaymentMethod ? 'active' : ''}`}
+              onClick={() => setView({ view: 'payment-method', paymentMethod: '', section: '', moneyInMethod: '' })}
+              type="button"
+            >
+              All Spending
+            </button>
+            {paymentMethods.map((m) => (
+              <button
+                key={m}
+                className={`nav-item ${view === 'payment-method' && viewPaymentMethod === m ? 'active' : ''}`}
+                onClick={() => setView({ view: 'payment-method', paymentMethod: m, section: '', moneyInMethod: '' })}
+                type="button"
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        </nav>
+      </aside>
+
+      <main className="main">
+        <div className="main-topbar">
+          <div>
+            <div className="main-title">{pageTitle}</div>
+            <div className="main-subtitle">Filter and drill down by section, method, and time</div>
+          </div>
+        </div>
+
+        <div className="container">
 
       {error ? (
         <section className="filters" style={{ border: '1px solid #ef4444' }}>
           <h2 style={{ color: '#ef4444' }}>Error loading data</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>{error}</p>
           <div style={{ background: '#f0f9ff', border: '1px solid #0ea5e9', borderRadius: 8, padding: 15 }}>
-            <p style={{ color: '#0c4a6e', fontWeight: 600, marginBottom: 10 }}>📋 How to Fix This:</p>
+            <p style={{ color: '#0c4a6e', fontWeight: 600, marginBottom: 10 }}>How to fix</p>
             <ol style={{ color: '#075985', fontSize: '0.9rem', marginLeft: 20, lineHeight: 1.8 }}>
-              <li>Open your Google Sheet</li>
-              <li>Go to <strong>File → Share → Publish to web</strong></li>
-              <li>Select <strong>Entire workbook</strong> (or publish each sheet)</li>
-              <li>Choose <strong>Comma-separated values (.csv)</strong></li>
-              <li>Click <strong>Publish</strong></li>
-              <li>Refresh the dashboard</li>
+              <li>Confirm your Vercel environment variables are set (GOOGLE_SHEET_ID + GCP_* for WIF)</li>
+              <li>Confirm the sheet is shared with the service account email</li>
+              <li>Redeploy and retry</li>
             </ol>
           </div>
           <button
@@ -724,141 +1009,121 @@ export default function DashboardClient() {
         </div>
       </section>
 
-      {/* Section Summary Cards */}
-      <section className="section-cards">
-        <h2>Spending by Section</h2>
-        <div className="section-cards-grid">
-          {sectionCards.length === 0 ? (
-            <p style={{ color: '#64748b', textAlign: 'center', padding: 20 }}>No spending data by section found.</p>
-          ) : (
-            sectionCards.map(([section, data]) => {
-              const sectionInfo = settingsData[section] || {};
+      {/* Section Summary Cards (Overview only) */}
+      {view === 'overview' ? (
+        <section className="section-cards">
+          <h2>Spending by Section</h2>
+          <div className="section-cards-grid">
+            {sectionCards.length === 0 ? (
+              <p style={{ color: '#64748b', textAlign: 'center', padding: 20 }}>No spending data by section found.</p>
+            ) : (
+              sectionCards.map(([section, data]) => {
+                const sectionInfo = settingsData[section] || {};
 
-              const costTypeItems = Object.entries(data.costTypes || {})
-                .sort((a, b) => b[1] - a[1])
-                .map(([type, amount]) => {
-                  const percentage = data.total ? ((amount / data.total) * 100).toFixed(1) : '0.0';
-                  return (
-                    <div className="cost-type-item" key={`ct-${section}-${type}`}>
-                      <span className="cost-type-label" style={{ backgroundColor: getCostTypeColor(type) }}>
-                        {type}
-                      </span>
-                      <span className="cost-type-amount">
-                        {formatCurrency(amount)} ({percentage}%)
-                      </span>
-                    </div>
-                  );
-                });
+                const costTypeItems = Object.entries(data.costTypes || {})
+                  .sort((a, b) => b[1] - a[1])
+                  .slice(0, 3)
+                  .map(([type, amount]) => {
+                    const percentage = data.total ? ((amount / data.total) * 100).toFixed(1) : '0.0';
+                    return (
+                      <div className="cost-type-item" key={`ct-${section}-${type}`}>
+                        <span className="cost-type-label" style={{ backgroundColor: getCostTypeColor(type) }}>
+                          {type}
+                        </span>
+                        <span className="cost-type-amount">
+                          {formatCurrency(amount)} ({percentage}%)
+                        </span>
+                      </div>
+                    );
+                  });
 
-              const paymentMethodItems = Object.entries(data.paymentMethods || {})
-                .sort((a, b) => b[1] - a[1])
-                .map(([method, amount]) => {
-                  const percentage = data.total ? ((amount / data.total) * 100).toFixed(1) : '0.0';
-                  return (
-                    <div className="payment-method-item" key={`pm-${section}-${method}`}>
-                      <span className="payment-method-label">💳 {method || 'Not specified'}</span>
-                      <span className="payment-method-amount">
-                        {formatCurrency(amount)} ({percentage}%)
-                      </span>
-                    </div>
-                  );
-                });
+                const paymentMethodItems = Object.entries(data.paymentMethods || {})
+                  .sort((a, b) => b[1] - a[1])
+                  .slice(0, 2)
+                  .map(([method, amount]) => {
+                    const percentage = data.total ? ((amount / data.total) * 100).toFixed(1) : '0.0';
+                    return (
+                      <div className="payment-method-item" key={`pm-${section}-${method}`}>
+                        <span className="payment-method-label">{method || 'Not specified'}</span>
+                        <span className="payment-method-amount">
+                          {formatCurrency(amount)} ({percentage}%)
+                        </span>
+                      </div>
+                    );
+                  });
 
-              const moneyInMethodItems = Object.entries(data.moneyInMethods || {})
-                .sort((a, b) => b[1] - a[1])
-                .map(([method, amount]) => {
-                  const percentage = data.moneyIn ? ((amount / data.moneyIn) * 100).toFixed(1) : '0.0';
-                  return (
-                    <div className="payment-method-item" key={`mi-${section}-${method}`}>
-                      <span className="payment-method-label">💰 {method || 'Not specified'}</span>
-                      <span className="payment-method-amount">
-                        {formatCurrency(amount)} ({percentage}%)
-                      </span>
-                    </div>
-                  );
-                });
-
-              return (
-                <div className="section-card" key={section}>
-                  <div className="section-card-header">
-                    <h3>{section}</h3>
-                    <div className="section-card-totals">
-                      {data.moneyIn > 0 ? (
-                        <p className="section-card-money-in">💰 Received: {formatCurrency(data.moneyIn)}</p>
+                return (
+                  <div
+                    className="section-card clickable"
+                    key={section}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setView({ view: 'section', section, moneyInMethod: '', paymentMethod: '' })}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setView({ view: 'section', section, moneyInMethod: '', paymentMethod: '' });
+                      }
+                    }}
+                  >
+                    <div className="section-card-header">
+                      <h3>{section}</h3>
+                      <div className="section-card-totals">
+                        {data.moneyIn > 0 ? (
+                          <p className="section-card-money-in">Received: {formatCurrency(data.moneyIn)}</p>
+                        ) : null}
+                        <p className="section-card-total">Spent: {formatCurrency(data.total)}</p>
+                      </div>
+                      {sectionInfo.status ? (
+                        <p
+                          className="section-status"
+                          style={{ color: getStatusColor(sectionInfo.status), fontSize: '0.85rem', marginTop: 8 }}
+                        >
+                          Status: {sectionInfo.status}
+                        </p>
                       ) : null}
-                      <p className="section-card-total">💸 Spent: {formatCurrency(data.total)}</p>
                     </div>
-                    {sectionInfo.status ? (
-                      <p
-                        className="section-status"
-                        style={{ color: getStatusColor(sectionInfo.status), fontSize: '0.85rem', marginTop: 8 }}
-                      >
-                        Status: {sectionInfo.status}
-                      </p>
-                    ) : null}
+
+                    <div className="section-card-body">
+                      {paymentMethodItems.length ? (
+                        <div className="breakdown-section">
+                          <h4
+                            style={{
+                              fontSize: '0.9rem',
+                              color: 'var(--text-secondary)',
+                              marginBottom: 8,
+                              fontWeight: 600,
+                            }}
+                          >
+                            Top payment methods
+                          </h4>
+                          {paymentMethodItems}
+                        </div>
+                      ) : null}
+
+                      {costTypeItems.length ? (
+                        <div className="breakdown-section">
+                          <h4
+                            style={{
+                              fontSize: '0.9rem',
+                              color: 'var(--text-secondary)',
+                              marginBottom: 8,
+                              fontWeight: 600,
+                              marginTop: 12,
+                            }}
+                          >
+                            Top cost types
+                          </h4>
+                          {costTypeItems}
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
-
-                  <div className="section-card-body">
-                    {data.moneyIn > 0 && moneyInMethodItems.length ? (
-                      <div className="breakdown-section">
-                        <h4
-                          style={{
-                            fontSize: '0.9rem',
-                            color: 'var(--text-secondary)',
-                            marginBottom: 8,
-                            fontWeight: 600,
-                          }}
-                        >
-                          Money Received By:
-                        </h4>
-                        {moneyInMethodItems}
-                      </div>
-                    ) : null}
-
-                    {paymentMethodItems.length ? (
-                      <div className="breakdown-section">
-                        <h4
-                          style={{
-                            fontSize: '0.9rem',
-                            color: 'var(--text-secondary)',
-                            marginBottom: 8,
-                            fontWeight: 600,
-                            marginTop: 12,
-                          }}
-                        >
-                          Spending By Payment Method:
-                        </h4>
-                        {paymentMethodItems}
-                      </div>
-                    ) : null}
-
-                    {costTypeItems.length ? (
-                      <div className="breakdown-section">
-                        <h4
-                          style={{
-                            fontSize: '0.9rem',
-                            color: 'var(--text-secondary)',
-                            marginBottom: 8,
-                            fontWeight: 600,
-                            marginTop: 12,
-                          }}
-                        >
-                          Spending By Cost Type:
-                        </h4>
-                        {costTypeItems}
-                      </div>
-                    ) : null}
-
-                    {!costTypeItems.length && !paymentMethodItems.length && !moneyInMethodItems.length ? (
-                      <p style={{ color: '#64748b', fontSize: '0.85rem' }}>No breakdown data available</p>
-                    ) : null}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </section>
+                );
+              })
+            )}
+          </div>
+        </section>
+      ) : null}
 
       {/* Filters */}
       <section className="filters">
@@ -934,15 +1199,41 @@ export default function DashboardClient() {
 
       {/* Charts */}
       <section className="charts">
+        {view === 'money-in' ? (
+          <>
+            <div className="chart-container">
+              <h3>Money In by Section</h3>
+              <ChartCanvas type="pie" data={moneyInBySectionChart.data} options={moneyInBySectionChart.options} />
+            </div>
+            <div className="chart-container">
+              <h3>Money In by Method</h3>
+              <ChartCanvas type="bar" data={moneyInByMethodChart.data} options={moneyInByMethodChart.options} />
+            </div>
+          </>
+        ) : view === 'payment-method' ? (
+          <>
+            <div className="chart-container">
+              <h3>Spending by Payment Method</h3>
+              <ChartCanvas type="bar" data={spendingByPaymentMethodChart.data} options={spendingByPaymentMethodChart.options} />
+            </div>
+            <div className="chart-container">
+              <h3>Spending by Cost Type</h3>
+              <ChartCanvas type="bar" data={costTypeChart.data} options={costTypeChart.options} />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="chart-container">
+              <h3>Spending by Section</h3>
+              <ChartCanvas type="pie" data={sectionChart.data} options={sectionChart.options} />
+            </div>
+            <div className="chart-container">
+              <h3>Spending by Cost Type</h3>
+              <ChartCanvas type="bar" data={costTypeChart.data} options={costTypeChart.options} />
+            </div>
+          </>
+        )}
         <div className="chart-container">
-          <h3>Spending by Section</h3>
-          <ChartCanvas type="pie" data={sectionChart.data} options={sectionChart.options} />
-        </div>
-        <div className="chart-container">
-          <h3>Spending by Cost Type</h3>
-          <ChartCanvas type="bar" data={costTypeChart.data} options={costTypeChart.options} />
-        </div>
-        <div className="chart-container full-width">
           <h3>Timeline: Money In vs Spending</h3>
           <ChartCanvas type="line" data={timelineChart.data} options={timelineChart.options} />
         </div>
@@ -1002,6 +1293,8 @@ export default function DashboardClient() {
         <div className="spinner"></div>
         <p>Loading data from Google Sheets...</p>
       </div>
+        </div>
+      </main>
     </div>
   );
 }
