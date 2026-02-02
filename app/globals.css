@@ -50,9 +50,37 @@ body {
 }
 
 .sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 10px 10px 14px 10px;
   border-bottom: 1px solid rgba(226, 232, 240, 0.12);
   margin-bottom: 12px;
+}
+
+.sidebar-close {
+  display: none;
+  background: transparent;
+  border: 1px solid rgba(226, 232, 240, 0.18);
+  color: rgba(226, 232, 240, 0.9);
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 1.25rem;
+}
+
+.sidebar-close:hover {
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+.sidebar-toggle {
+  display: none;
 }
 
 .sidebar-title {
@@ -122,6 +150,13 @@ body {
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border-color);
   padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.main-topbar-content {
+  min-width: 0;
 }
 
 .main-title {
@@ -572,8 +607,59 @@ tbody tr:nth-child(even):hover {
   }
 
   .sidebar {
-    position: relative;
-    height: auto;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 20;
+    width: min(320px, 86vw);
+    height: 100vh;
+    transform: translateX(-105%);
+    transition: transform 180ms ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  }
+
+  .app-shell.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .sidebar-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    background: rgba(15, 23, 42, 0.55);
+    border: 0;
+    padding: 0;
+  }
+
+  .app-shell.sidebar-open .sidebar-overlay {
+    display: block;
+  }
+
+  .sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: white;
+    color: var(--text-primary);
+    cursor: pointer;
+    flex: 0 0 auto;
+    box-shadow: var(--shadow);
+  }
+
+  .sidebar-toggle:hover {
+    box-shadow: var(--shadow-lg);
   }
 
   .container {
@@ -611,6 +697,12 @@ tbody tr:nth-child(even):hover {
   th,
   td {
     padding: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
   }
 }
 

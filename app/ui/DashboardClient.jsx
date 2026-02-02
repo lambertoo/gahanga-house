@@ -229,6 +229,7 @@ export default function DashboardClient() {
   const [error, setError] = useState(null);
   const [allTransactions, setAllTransactions] = useState([]);
   const [settingsData, setSettingsData] = useState({});
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [filters, setFilters] = useState({
     dateFrom: '',
@@ -256,6 +257,32 @@ export default function DashboardClient() {
     },
     [router, searchParams]
   );
+
+  const navTo = useCallback(
+    (next) => {
+      setView(next);
+      setSidebarOpen(false);
+    },
+    [setView]
+  );
+
+  // Mobile UX: lock scroll + allow Esc to close menu
+  useEffect(() => {
+    if (!sidebarOpen) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setSidebarOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [sidebarOpen]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -863,17 +890,27 @@ export default function DashboardClient() {
   }, [view, viewSection, viewMoneyInMethod, viewPaymentMethod]);
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
+    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : ''}`}>
+      <aside className="sidebar" id="sidebar">
         <div className="sidebar-header">
-          <div className="sidebar-title">GAHANGA Dashboard</div>
-          <div className="sidebar-subtitle">Construction finance</div>
+          <div>
+            <div className="sidebar-title">GAHANGA Dashboard</div>
+            <div className="sidebar-subtitle">Construction finance</div>
+          </div>
+          <button
+            type="button"
+            className="sidebar-close"
+            aria-label="Close menu"
+            onClick={() => setSidebarOpen(false)}
+          >
+            ×
+          </button>
         </div>
 
         <nav className="sidebar-nav">
           <button
             className={`nav-item ${view === 'overview' ? 'active' : ''}`}
-            onClick={() => setView({ view: 'overview', section: '', moneyInMethod: '', paymentMethod: '' })}
+            onClick={() => navTo({ view: 'overview', section: '', moneyInMethod: '', paymentMethod: '' })}
             type="button"
           >
             Overview
@@ -885,7 +922,7 @@ export default function DashboardClient() {
               <button
                 key={s}
                 className={`nav-item ${view === 'section' && viewSection === s ? 'active' : ''}`}
-                onClick={() => setView({ view: 'section', section: s, moneyInMethod: '', paymentMethod: '' })}
+                onClick={() => navTo({ view: 'section', section: s, moneyInMethod: '', paymentMethod: '' })}
                 type="button"
               >
                 {s}
@@ -897,7 +934,7 @@ export default function DashboardClient() {
             <div className="nav-section-title">Money In</div>
             <button
               className={`nav-item ${view === 'money-in' && !viewMoneyInMethod ? 'active' : ''}`}
-              onClick={() => setView({ view: 'money-in', moneyInMethod: '', section: '', paymentMethod: '' })}
+              onClick={() => navTo({ view: 'money-in', moneyInMethod: '', section: '', paymentMethod: '' })}
               type="button"
             >
               All Money In
@@ -906,7 +943,7 @@ export default function DashboardClient() {
               <button
                 key={m}
                 className={`nav-item ${view === 'money-in' && viewMoneyInMethod === m ? 'active' : ''}`}
-                onClick={() => setView({ view: 'money-in', moneyInMethod: m, section: '', paymentMethod: '' })}
+                onClick={() => navTo({ view: 'money-in', moneyInMethod: m, section: '', paymentMethod: '' })}
                 type="button"
               >
                 {m}
@@ -918,7 +955,7 @@ export default function DashboardClient() {
             <div className="nav-section-title">Spending</div>
             <button
               className={`nav-item ${view === 'payment-method' && !viewPaymentMethod ? 'active' : ''}`}
-              onClick={() => setView({ view: 'payment-method', paymentMethod: '', section: '', moneyInMethod: '' })}
+              onClick={() => navTo({ view: 'payment-method', paymentMethod: '', section: '', moneyInMethod: '' })}
               type="button"
             >
               All Spending
@@ -927,7 +964,7 @@ export default function DashboardClient() {
               <button
                 key={m}
                 className={`nav-item ${view === 'payment-method' && viewPaymentMethod === m ? 'active' : ''}`}
-                onClick={() => setView({ view: 'payment-method', paymentMethod: m, section: '', moneyInMethod: '' })}
+                onClick={() => navTo({ view: 'payment-method', paymentMethod: m, section: '', moneyInMethod: '' })}
                 type="button"
               >
                 {m}
@@ -937,9 +974,26 @@ export default function DashboardClient() {
         </nav>
       </aside>
 
+      <button
+        type="button"
+        className="sidebar-overlay"
+        aria-label="Close menu"
+        onClick={() => setSidebarOpen(false)}
+      />
+
       <main className="main">
         <div className="main-topbar">
-          <div>
+          <button
+            type="button"
+            className="sidebar-toggle"
+            aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
+            aria-controls="sidebar"
+            aria-expanded={sidebarOpen}
+            onClick={() => setSidebarOpen((v) => !v)}
+          >
+            <span aria-hidden="true">☰</span>
+          </button>
+          <div className="main-topbar-content">
             <div className="main-title">{pageTitle}</div>
             <div className="main-subtitle">Filter and drill down by section, method, and time</div>
           </div>
