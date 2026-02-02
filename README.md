@@ -1,6 +1,6 @@
 # GAHANGA House Construction Dashboard
 
-An interactive HTML dashboard to track construction finances, monitor payments to engineers, and analyze spending by construction section and cost type.
+An interactive dashboard (now a **React / Next.js app**) to track construction finances, monitor payments to engineers, and analyze spending by construction section and cost type.
 
 ## Features
 
@@ -22,48 +22,30 @@ An interactive HTML dashboard to track construction finances, monitor payments t
    - Click **"Publish"**
    - Note: The dashboard primarily uses the **"Details"** sheet for transaction data
 
-2. **Start a local web server** (Required to avoid CORS errors):
+2. **Run the app locally:**
 
 ### Quick Start (Easiest Method)
 
-**On macOS/Linux:**
+**Install dependencies:**
 ```bash
-./start-server.sh
+npm install
 ```
 
-**On Windows:**
+**Start dev server:**
 ```bash
-python3 -m http.server 8000
+npm run dev
 ```
 
-Then open: **http://localhost:8000** in your browser
+Then open: **http://localhost:3000** in your browser
 
 ### Alternative Methods
 
-**Python 3:**
+If you want a production build locally:
+
 ```bash
-python3 -m http.server 8000
+npm run build
+npm start
 ```
-
-**Python 2:**
-```bash
-python -m SimpleHTTPServer 8000
-```
-
-**Node.js (with http-server):**
-```bash
-npx http-server -p 8000
-```
-
-**VS Code:**
-- Install the "Live Server" extension
-- Right-click on `index.html` and select "Open with Live Server"
-
-### Why a Local Server?
-
-Opening `index.html` directly (file://) will cause CORS (Cross-Origin Resource Sharing) errors when trying to fetch data from Google Sheets. Using a local web server (http://localhost) resolves this issue.
-
-**Note:** The dashboard includes an automatic CORS proxy fallback, but using a local server is more reliable and faster.
 
 ## Data Requirements
 
@@ -97,7 +79,7 @@ The **"Settings"** sheet is used for reference data and should have:
 - Check browser console for error messages
 
 ### CORS Errors
-- Use a local web server instead of opening the file directly
+- This app uses a same-origin `/api/sheets` proxy to avoid browser CORS issues
 - Ensure the Google Sheet is published (not just shared)
 
 ### Charts Not Displaying
@@ -109,11 +91,66 @@ The **"Settings"** sheet is used for reference data and should have:
 
 ```
 gahanga/
-├── index.html      # Main dashboard HTML
-├── app.js          # JavaScript logic and data processing
-├── styles.css      # Styling
+├── app/            # Next.js app (React)
+├── app/api/sheets  # Google Sheets CSV proxy (avoids CORS on Vercel)
+├── app/ui          # Dashboard UI components
 └── README.md       # This file
 ```
+
+## Deploy to Vercel
+
+1. Push to GitHub (already done)
+2. In Vercel, import the GitHub repo
+3. Framework preset: **Next.js** (auto-detected)
+4. Deploy
+
+## Private Google Sheet (recommended setup)
+
+If your Google Sheet is **private**, the app must use the **Google Sheets API** (server-side). The frontend still loads data from `/api/sheets`, but the server uses credentials from environment variables.
+
+### Option A (recommended / keyless): Vercel OIDC + Google Workload Identity Federation
+
+This is the most secure option because you **do not store any service account key** in Vercel. Vercel issues a short-lived OIDC token and Google exchanges it for short-lived credentials (service account impersonation). See:
+
+- Vercel OIDC overview: `https://vercel.com/docs/oidc`
+- Vercel ↔︎ GCP setup: `https://vercel.com/docs/oidc/gcp`
+- Google Workload Identity Federation: `https://docs.cloud.google.com/iam/docs/workload-identity-federation`
+
+**Vercel env vars to set:**
+
+- `GOOGLE_SHEET_ID`: your spreadsheet id (from the URL, looks like `1AbC...`)
+- `GCP_PROJECT_NUMBER`
+- `GCP_SERVICE_ACCOUNT_EMAIL` (you said: `gahanga-webcrower@ferrous-syntax-377008.iam.gserviceaccount.com`)
+- `GCP_WORKLOAD_IDENTITY_POOL_ID`
+- `GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID`
+- (optional) `GOOGLE_SHEETS_DETAILS_TAB`: defaults to `Details`
+- (optional) `GOOGLE_SHEETS_SETTINGS_TAB`: defaults to `Settings`
+
+**Google Sheet sharing:**
+
+- Share the spreadsheet with the service account email (Viewer access is enough).
+
+### Option B: Service Account JSON (simpler, but stores a key)
+
+1. Create a Google Cloud **Service Account** and download its JSON key.
+2. Share your Google Sheet with the service account email (Viewer access is enough).
+3. In Vercel → Project → Settings → Environment Variables, set:
+
+- `GOOGLE_SHEET_ID`: your spreadsheet id (from the URL, looks like `1AbC...`)
+- `GOOGLE_SERVICE_ACCOUNT_JSON`: the full JSON key contents (as a single env var)
+- (optional) `GOOGLE_SHEETS_DETAILS_TAB`: defaults to `Details`
+- (optional) `GOOGLE_SHEETS_SETTINGS_TAB`: defaults to `Settings`
+
+### Option C: OAuth Client (Client ID/Secret + Refresh Token)
+
+If you prefer using your OAuth client:
+
+- `GOOGLE_SHEET_ID`
+- `GOOGLE_OAUTH_CLIENT_ID`
+- `GOOGLE_OAUTH_CLIENT_SECRET`
+- `GOOGLE_OAUTH_REFRESH_TOKEN`
+
+This requires generating a refresh token once (locally) and then storing it in Vercel env vars.
 
 ## Browser Compatibility
 
