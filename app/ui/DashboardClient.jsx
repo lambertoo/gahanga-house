@@ -20,10 +20,14 @@ function parseDate(dateString) {
     return new Date((dateString - 25569) * 86400 * 1000);
   }
 
-  // DD/MM/YYYY
-  const ddmmyyyy = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (ddmmyyyy) {
-    return new Date(parseInt(ddmmyyyy[3], 10), parseInt(ddmmyyyy[2], 10) - 1, parseInt(ddmmyyyy[1], 10));
+  // Sheet publishes MM/DD/YYYY; older exports were DD/MM/YYYY. A first part > 12 can only be a day.
+  const slash_date = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slash_date) {
+    const first_part = parseInt(slash_date[1], 10);
+    const second_part = parseInt(slash_date[2], 10);
+    const year = parseInt(slash_date[3], 10);
+    if (first_part > 12) return new Date(year, second_part - 1, first_part);
+    return new Date(year, first_part - 1, second_part);
   }
 
   // YYYY-MM-DD
