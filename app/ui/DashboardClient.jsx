@@ -5,6 +5,24 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ChartCanvas from './charts/ChartCanvas';
 
+const CHART_PALETTE = [
+  '#a06b2e',
+  '#5f7d5a',
+  '#8a6f9e',
+  '#b3924a',
+  '#6f8fa3',
+  '#a85b52',
+  '#7d7461',
+  '#4f6d7a',
+  '#9d5f7c',
+  '#66735c',
+];
+const MONEY_IN_COLOR = '#3f7d5c';
+const SPENDING_COLOR = '#a85141';
+const ACCENT_COLOR = '#a06b2e';
+const MUTED_COLOR = '#877d6d';
+const HAIRLINE_COLOR = 'rgba(47, 42, 36, 0.07)';
+
 function parseNumber(value) {
   if (!value || value === 'NaN' || value === '#REF!' || value === '') return 0;
   if (typeof value === 'number') return value;
@@ -61,6 +79,11 @@ function formatDateShort(ymd) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+function formatMonthLabel(yearMonth) {
+  const [y, m] = yearMonth.split('-').map((n) => parseInt(n, 10));
+  return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+}
+
 function formatDateFull(date) {
   if (!date) return 'N/A';
   return date.toLocaleDateString('en-US', {
@@ -81,27 +104,43 @@ function formatCurrency(amount) {
     .replace('RWF', 'RWF ');
 }
 
+function formatPlainAmount(amount) {
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(amount);
+}
+
+function formatCompactRwf(amount) {
+  const absolute_amount = Math.abs(amount);
+  const sign = amount < 0 ? '-' : '';
+  if (absolute_amount >= 1_000_000) return `${sign}${(absolute_amount / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (absolute_amount >= 1_000) return `${sign}${Math.round(absolute_amount / 1_000)}K`;
+  return `${sign}${absolute_amount}`;
+}
+
 function getCostTypeColor(costType) {
   const colorMap = {
-    Material: '#2563eb',
-    Manpower: '#10b981',
-    Other: '#f59e0b',
-    'cash in': '#10b981',
-    'cash out': '#ef4444',
-    Repairing: '#8b5cf6',
-    Unknown: '#64748b',
+    Material: '#b3924a',
+    Manpower: '#5f7d5a',
+    Transport: '#6f8fa3',
+    'Transfer fee': '#8a6f9e',
+    Repairing: '#a85b52',
+    Electricity: '#4f6d7a',
+    'Money received': MONEY_IN_COLOR,
+    'Cash in': MONEY_IN_COLOR,
+    'Cash out': SPENDING_COLOR,
+    Other: '#7d7461',
+    Unknown: '#7d7461',
   };
-  return colorMap[costType] || '#64748b';
+  return colorMap[costType] || '#7d7461';
 }
 
 function getStatusColor(status) {
   const statusMap = {
-    Completed: '#10b981',
-    'In Progress': '#2563eb',
-    'Not Started': '#64748b',
-    Delayed: '#ef4444',
+    Completed: MONEY_IN_COLOR,
+    'In Progress': ACCENT_COLOR,
+    'Not Started': MUTED_COLOR,
+    Delayed: SPENDING_COLOR,
   };
-  return statusMap[status] || '#64748b';
+  return statusMap[status] || MUTED_COLOR;
 }
 
 function parseCsv(csvText) {
@@ -133,7 +172,8 @@ function processTransactions(rawData) {
       if (section.toLowerCase() === 'transport') section = 'Transport';
     }
 
-    const costType = (row['Cost Type'] || 'Unknown').trim();
+    let costType = (row['Cost Type'] || 'Unknown').trim();
+    if (costType) costType = costType.charAt(0).toUpperCase() + costType.slice(1);
     const moneyIn = parseNumber(row['Money In']);
     const spending = parseNumber(row.Cost);
     const taskDescription = row['Task / Description'] || '';
@@ -223,6 +263,94 @@ async function findSheetByGid(gidValues, sheetName) {
     }
   }
   return null;
+}
+
+const COMPACT_MONEY_SCALE = {
+  y: {
+    beginAtZero: true,
+    grid: { color: HAIRLINE_COLOR },
+    border: { display: false },
+    ticks: { callback: (value) => formatCompactRwf(value) },
+  },
+  x: {
+    grid: { display: false },
+    border: { display: false },
+  },
+};
+
+function buildDoughnut(labels, data) {
+  return {
+    data: {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: CHART_PALETTE,
+          borderColor: '#ffffff',
+          borderWidth: 2,
+          hoverOffset: 6,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      cutout: '62%',
+      plugins: {
+        legend: { position: 'right' },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const label = context.label || '';
+              const value = formatCurrency(context.parsed);
+              const total = context.dataset.data.reduce((x, y) => x + y, 0);
+              const percentage = total ? ((context.parsed / total) * 100).toFixed(1) : '0.0';
+              return `${label}: ${value} (${percentage}%)`;
+            },
+          },
+        },
+      },
+    },
+  };
+}
+
+function buildBar(labels, data, colors) {
+  return {
+    data: {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: colors,
+          borderRadius: 7,
+          maxBarThickness: 36,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: (context) => formatCurrency(context.parsed.y) },
+        },
+      },
+      scales: COMPACT_MONEY_SCALE,
+    },
+  };
+}
+
+function StatCard({ label, value, note, tone, index }) {
+  return (
+    <div className="surface stat-card rise" style={{ '--i': index }}>
+      <div className="stat-eyebrow">{label}</div>
+      <div>
+        <div className={`stat-value ${tone || ''}`}>{value}</div>
+        {note ? <div className="stat-note">{note}</div> : null}
+      </div>
+    </div>
+  );
 }
 
 export default function DashboardClient() {
@@ -441,10 +569,21 @@ export default function DashboardClient() {
     const totalMoneyIn = filteredTransactions.reduce((sum, t) => sum + t.moneyIn, 0);
     const totalSpending = filteredTransactions.reduce((sum, t) => sum + t.spending, 0);
     const balance = totalMoneyIn - totalSpending;
+
+    const dated = filteredTransactions.filter((t) => t.date);
+    let averageDailySpend = 0;
+    if (dated.length) {
+      const first_day = Math.min(...dated.map((t) => t.date.getTime()));
+      const last_day = Math.max(...dated.map((t) => t.date.getTime()));
+      const day_span = Math.max(1, Math.round((last_day - first_day) / 86400000) + 1);
+      averageDailySpend = totalSpending / day_span;
+    }
+
     return {
       totalMoneyIn,
       totalSpending,
       balance,
+      averageDailySpend,
       transactionCount: filteredTransactions.length,
     };
   }, [filteredTransactions]);
@@ -570,48 +709,7 @@ export default function DashboardClient() {
       }
     });
     const labels = Object.keys(sectionData).sort((a, b) => sectionData[b] - sectionData[a]);
-    const data = labels.map((l) => sectionData[l]);
-
-    return {
-      data: {
-        labels,
-        datasets: [
-          {
-            data,
-            backgroundColor: [
-              '#2563eb',
-              '#10b981',
-              '#f59e0b',
-              '#ef4444',
-              '#8b5cf6',
-              '#ec4899',
-              '#06b6d4',
-              '#84cc16',
-              '#f97316',
-              '#6366f1',
-            ],
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: { position: 'right' },
-          tooltip: {
-            callbacks: {
-              label: (context) => {
-                const label = context.label || '';
-                const value = formatCurrency(context.parsed);
-                const total = context.dataset.data.reduce((x, y) => x + y, 0);
-                const percentage = total ? ((context.parsed / total) * 100).toFixed(1) : '0.0';
-                return `${label}: ${value} (${percentage}%)`;
-              },
-            },
-          },
-        },
-      },
-    };
+    return buildDoughnut(labels, labels.map((l) => sectionData[l]));
   }, [filteredTransactions]);
 
   const moneyInBySectionChart = useMemo(() => {
@@ -622,48 +720,7 @@ export default function DashboardClient() {
       }
     });
     const labels = Object.keys(sectionData).sort((a, b) => sectionData[b] - sectionData[a]);
-    const data = labels.map((l) => sectionData[l]);
-
-    return {
-      data: {
-        labels,
-        datasets: [
-          {
-            data,
-            backgroundColor: [
-              '#2563eb',
-              '#10b981',
-              '#f59e0b',
-              '#ef4444',
-              '#8b5cf6',
-              '#ec4899',
-              '#06b6d4',
-              '#84cc16',
-              '#f97316',
-              '#6366f1',
-            ],
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: { position: 'right' },
-          tooltip: {
-            callbacks: {
-              label: (context) => {
-                const label = context.label || '';
-                const value = formatCurrency(context.parsed);
-                const total = context.dataset.data.reduce((x, y) => x + y, 0);
-                const percentage = total ? ((context.parsed / total) * 100).toFixed(1) : '0.0';
-                return `${label}: ${value} (${percentage}%)`;
-              },
-            },
-          },
-        },
-      },
-    };
+    return buildDoughnut(labels, labels.map((l) => sectionData[l]));
   }, [filteredTransactions]);
 
   const moneyInByMethodChart = useMemo(() => {
@@ -675,41 +732,7 @@ export default function DashboardClient() {
       }
     });
     const labels = Object.keys(methodData).sort((a, b) => methodData[b] - methodData[a]);
-    const data = labels.map((l) => methodData[l]);
-
-    return {
-      data: {
-        labels,
-        datasets: [
-          {
-            label: 'Money In',
-            data,
-            backgroundColor: '#10b981',
-            borderRadius: 8,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (context) => formatCurrency(context.parsed.y),
-            },
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: (value) => formatCurrency(value),
-            },
-          },
-        },
-      },
-    };
+    return buildBar(labels, labels.map((l) => methodData[l]), MONEY_IN_COLOR);
   }, [filteredTransactions]);
 
   const spendingByPaymentMethodChart = useMemo(() => {
@@ -721,41 +744,7 @@ export default function DashboardClient() {
       }
     });
     const labels = Object.keys(methodData).sort((a, b) => methodData[b] - methodData[a]);
-    const data = labels.map((l) => methodData[l]);
-
-    return {
-      data: {
-        labels,
-        datasets: [
-          {
-            label: 'Spending',
-            data,
-            backgroundColor: '#ef4444',
-            borderRadius: 8,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (context) => formatCurrency(context.parsed.y),
-            },
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: (value) => formatCurrency(value),
-            },
-          },
-        },
-      },
-    };
+    return buildBar(labels, labels.map((l) => methodData[l]), SPENDING_COLOR);
   }, [filteredTransactions]);
 
   const costTypeChart = useMemo(() => {
@@ -764,18 +753,38 @@ export default function DashboardClient() {
       if (t.spending > 0) costTypeData[t.costType] = (costTypeData[t.costType] || 0) + t.spending;
     });
     const labels = Object.keys(costTypeData).sort((a, b) => costTypeData[b] - costTypeData[a]);
-    const data = labels.map((l) => costTypeData[l]);
-    const colors = labels.map((l) => getCostTypeColor(l));
+    return buildBar(labels, labels.map((l) => costTypeData[l]), labels.map((l) => getCostTypeColor(l)));
+  }, [filteredTransactions]);
+
+  const monthlyCashflowChart = useMemo(() => {
+    const monthData = {};
+    filteredTransactions.forEach((t) => {
+      if (!t.date) return;
+      const month_key = toYmd(t.date).slice(0, 7);
+      if (!monthData[month_key]) monthData[month_key] = { moneyIn: 0, spending: 0 };
+      monthData[month_key].moneyIn += t.moneyIn;
+      monthData[month_key].spending += t.spending;
+    });
+
+    const months = Object.keys(monthData).sort();
 
     return {
       data: {
-        labels,
+        labels: months.map(formatMonthLabel),
         datasets: [
           {
+            label: 'Money In',
+            data: months.map((m) => monthData[m].moneyIn),
+            backgroundColor: MONEY_IN_COLOR,
+            borderRadius: 6,
+            maxBarThickness: 22,
+          },
+          {
             label: 'Spending',
-            data,
-            backgroundColor: colors,
-            borderRadius: 8,
+            data: months.map((m) => monthData[m].spending),
+            backgroundColor: SPENDING_COLOR,
+            borderRadius: 6,
+            maxBarThickness: 22,
           },
         ],
       },
@@ -783,58 +792,51 @@ export default function DashboardClient() {
         responsive: true,
         maintainAspectRatio: true,
         plugins: {
-          legend: { display: false },
+          legend: { position: 'top', align: 'end' },
           tooltip: {
             callbacks: {
-              label: (context) => formatCurrency(context.parsed.y),
+              label: (context) => `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`,
             },
           },
         },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: (value) => formatCurrency(value),
-            },
-          },
-        },
+        scales: COMPACT_MONEY_SCALE,
       },
     };
   }, [filteredTransactions]);
 
-  const timelineChart = useMemo(() => {
-    const dateData = {};
+  const cumulativeBalanceSeries = useMemo(() => {
+    const netByDay = {};
     filteredTransactions.forEach((t) => {
       if (!t.date) return;
-      const dateKey = toYmd(t.date);
-      if (!dateData[dateKey]) dateData[dateKey] = { moneyIn: 0, spending: 0 };
-      dateData[dateKey].moneyIn += t.moneyIn;
-      dateData[dateKey].spending += t.spending;
+      const day_key = toYmd(t.date);
+      netByDay[day_key] = (netByDay[day_key] || 0) + t.moneyIn - t.spending;
     });
 
-    const dates = Object.keys(dateData).sort();
-    const moneyInData = dates.map((d) => dateData[d].moneyIn);
-    const spendingData = dates.map((d) => dateData[d].spending);
+    const days = Object.keys(netByDay).sort();
+    let running_balance = 0;
+    const balances = days.map((d) => {
+      running_balance += netByDay[d];
+      return Math.round(running_balance);
+    });
+    return { days, balances };
+  }, [filteredTransactions]);
 
+  const cashPositionChart = useMemo(() => {
+    const { days, balances } = cumulativeBalanceSeries;
     return {
       data: {
-        labels: dates.map(formatDateShort),
+        labels: days.map(formatDateShort),
         datasets: [
           {
-            label: 'Money In',
-            data: moneyInData,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            tension: 0.4,
+            label: 'Cash on hand',
+            data: balances,
+            borderColor: ACCENT_COLOR,
+            backgroundColor: 'rgba(160, 107, 46, 0.09)',
+            borderWidth: 2,
+            tension: 0.35,
             fill: true,
-          },
-          {
-            label: 'Spending',
-            data: spendingData,
-            borderColor: '#ef4444',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            tension: 0.4,
-            fill: true,
+            pointRadius: 0,
+            pointHitRadius: 12,
           },
         ],
       },
@@ -843,20 +845,58 @@ export default function DashboardClient() {
         maintainAspectRatio: true,
         interaction: { mode: 'index', intersect: false },
         plugins: {
+          legend: { display: false },
           tooltip: {
-            callbacks: {
-              label: (context) => `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`,
-            },
+            callbacks: { label: (context) => `Cash on hand: ${formatCurrency(context.parsed.y)}` },
           },
         },
         scales: {
           y: {
-            beginAtZero: true,
-            ticks: { callback: (value) => formatCurrency(value) },
+            grid: { color: HAIRLINE_COLOR },
+            border: { display: false },
+            ticks: { callback: (value) => formatCompactRwf(value) },
+          },
+          x: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { maxTicksLimit: 10 },
           },
         },
       },
     };
+  }, [cumulativeBalanceSeries]);
+
+  const heroSparklineChart = useMemo(() => {
+    const { days, balances } = cumulativeBalanceSeries;
+    return {
+      data: {
+        labels: days,
+        datasets: [
+          {
+            data: balances,
+            borderColor: ACCENT_COLOR,
+            backgroundColor: 'rgba(160, 107, 46, 0.12)',
+            borderWidth: 2,
+            tension: 0.35,
+            fill: true,
+            pointRadius: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { x: { display: false }, y: { display: false } },
+      },
+    };
+  }, [cumulativeBalanceSeries]);
+
+  const topExpenses = useMemo(() => {
+    return filteredTransactions
+      .filter((t) => t.spending > 0)
+      .sort((a, b) => b.spending - a.spending)
+      .slice(0, 8);
   }, [filteredTransactions]);
 
   const onHeaderClick = (column) => {
@@ -898,7 +938,7 @@ export default function DashboardClient() {
       <aside className="sidebar" id="sidebar">
         <div className="sidebar-header">
           <div>
-            <div className="sidebar-title">GAHANGA Dashboard</div>
+            <div className="sidebar-title">Gahanga House</div>
             <div className="sidebar-subtitle">Construction finance</div>
           </div>
           <button
@@ -1004,356 +1044,374 @@ export default function DashboardClient() {
         </div>
 
         <div className="container">
+          {error ? (
+            <section className="surface error-card">
+              <h2>Error loading data</h2>
+              <p>{error}</p>
+              <div className="error-hint">
+                <p style={{ fontWeight: 600, marginBottom: 8 }}>How to fix</p>
+                <ol>
+                  <li>Confirm your Vercel environment variables are set (GOOGLE_SHEET_ID + GCP_* for WIF)</li>
+                  <li>Confirm the sheet is shared with the service account email</li>
+                  <li>Redeploy and retry</li>
+                </ol>
+              </div>
+              <button className="btn-retry" onClick={loadData}>
+                Retry
+              </button>
+            </section>
+          ) : null}
 
-      {error ? (
-        <section className="filters" style={{ border: '1px solid #ef4444' }}>
-          <h2 style={{ color: '#ef4444' }}>Error loading data</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>{error}</p>
-          <div style={{ background: '#f0f9ff', border: '1px solid #0ea5e9', borderRadius: 8, padding: 15 }}>
-            <p style={{ color: '#0c4a6e', fontWeight: 600, marginBottom: 10 }}>How to fix</p>
-            <ol style={{ color: '#075985', fontSize: '0.9rem', marginLeft: 20, lineHeight: 1.8 }}>
-              <li>Confirm your Vercel environment variables are set (GOOGLE_SHEET_ID + GCP_* for WIF)</li>
-              <li>Confirm the sheet is shared with the service account email</li>
-              <li>Redeploy and retry</li>
-            </ol>
-          </div>
-          <button
-            onClick={loadData}
-            style={{
-              marginTop: 16,
-              padding: '10px 20px',
-              background: '#2563eb',
-              color: 'white',
-              border: 'none',
-              borderRadius: 8,
-              cursor: 'pointer',
-              fontSize: '1rem',
-            }}
-          >
-            Retry
-          </button>
-        </section>
-      ) : null}
+          {/* Hero */}
+          <section className="hero">
+            <div className="surface hero-balance rise" style={{ '--i': 0 }}>
+              <div className="stat-eyebrow">Cash on hand</div>
+              <div className={`hero-number ${totals.balance < 0 ? 'negative-balance' : ''}`}>
+                <span className="money-unit">RWF</span>
+                {formatPlainAmount(totals.balance)}
+              </div>
+              <div className="hero-meta">
+                <span>
+                  Received <span className="money">{formatCurrency(totals.totalMoneyIn)}</span>
+                </span>
+                <span>
+                  Spent <span className="money">{formatCurrency(totals.totalSpending)}</span>
+                </span>
+              </div>
+              <div className="hero-spark">
+                <ChartCanvas type="line" data={heroSparklineChart.data} options={heroSparklineChart.options} />
+              </div>
+            </div>
 
-      {/* Summary Cards */}
-      <section className="summary-cards">
-        <div className="card">
-          <div className="card-icon">💰</div>
-          <div className="card-content">
-            <h3>Total Money Given</h3>
-            <p className="card-value">{formatCurrency(totals.totalMoneyIn)}</p>
-          </div>
-        </div>
-        <div className="card">
-          <div className="card-icon">💸</div>
-          <div className="card-content">
-            <h3>Total Spending</h3>
-            <p className="card-value">{formatCurrency(totals.totalSpending)}</p>
-          </div>
-        </div>
-        <div className="card">
-          <div className="card-icon">📊</div>
-          <div className="card-content">
-            <h3>Balance</h3>
-            <p className={`card-value ${totals.balance >= 0 ? 'positive' : 'negative'}`}>{formatCurrency(totals.balance)}</p>
-          </div>
-        </div>
-        <div className="card">
-          <div className="card-icon">📝</div>
-          <div className="card-content">
-            <h3>Transactions</h3>
-            <p className="card-value">{totals.transactionCount.toLocaleString()}</p>
-          </div>
-        </div>
-      </section>
+            <div className="stat-grid">
+              <StatCard
+                label="Money received"
+                value={formatCurrency(totals.totalMoneyIn)}
+                tone="positive-tone"
+                index={1}
+              />
+              <StatCard
+                label="Total spending"
+                value={formatCurrency(totals.totalSpending)}
+                tone="negative-tone"
+                index={2}
+              />
+              <StatCard
+                label="Average spend per day"
+                value={formatCurrency(totals.averageDailySpend)}
+                note="Across the selected date range"
+                index={3}
+              />
+              <StatCard
+                label="Transactions"
+                value={totals.transactionCount.toLocaleString()}
+                note="Rows in the selected range"
+                index={4}
+              />
+            </div>
+          </section>
 
-      {/* Section Summary Cards (Overview only) */}
-      {view === 'overview' ? (
-        <section className="section-cards">
-          <h2>Spending by Section</h2>
-          <div className="section-cards-grid">
-            {sectionCards.length === 0 ? (
-              <p style={{ color: '#64748b', textAlign: 'center', padding: 20 }}>No spending data by section found.</p>
+          {/* Section Summary Cards (Overview only) */}
+          {view === 'overview' ? (
+            <section className="section-cards rise" style={{ '--i': 5 }}>
+              <h2 className="section-heading">Spending by section</h2>
+              <div className="section-cards-grid">
+                {sectionCards.length === 0 ? (
+                  <p style={{ color: 'var(--muted)', textAlign: 'center', padding: 20 }}>
+                    No spending data by section found.
+                  </p>
+                ) : (
+                  sectionCards.map(([section, data]) => {
+                    const sectionInfo = settingsData[section] || {};
+
+                    const costTypeItems = Object.entries(data.costTypes || {})
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 3)
+                      .map(([type, amount]) => {
+                        const percentage = data.total ? ((amount / data.total) * 100).toFixed(1) : '0.0';
+                        return (
+                          <div className="cost-type-item" key={`ct-${section}-${type}`}>
+                            <span className="cost-type-label" style={{ backgroundColor: getCostTypeColor(type) }}>
+                              {type}
+                            </span>
+                            <span className="cost-type-amount money">
+                              {formatCurrency(amount)} ({percentage}%)
+                            </span>
+                          </div>
+                        );
+                      });
+
+                    const paymentMethodItems = Object.entries(data.paymentMethods || {})
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 2)
+                      .map(([method, amount]) => {
+                        const percentage = data.total ? ((amount / data.total) * 100).toFixed(1) : '0.0';
+                        return (
+                          <div className="payment-method-item" key={`pm-${section}-${method}`}>
+                            <span className="payment-method-label">{method || 'Not specified'}</span>
+                            <span className="payment-method-amount money">
+                              {formatCurrency(amount)} ({percentage}%)
+                            </span>
+                          </div>
+                        );
+                      });
+
+                    return (
+                      <div
+                        className="surface section-card clickable"
+                        key={section}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setView({ view: 'section', section, moneyInMethod: '', paymentMethod: '' })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            setView({ view: 'section', section, moneyInMethod: '', paymentMethod: '' });
+                          }
+                        }}
+                      >
+                        <div className="section-card-header">
+                          <h3>{section}</h3>
+                          <div className="section-card-totals">
+                            {data.moneyIn > 0 ? (
+                              <p className="section-card-money-in money">Received: {formatCurrency(data.moneyIn)}</p>
+                            ) : null}
+                            <p className="section-card-total money">Spent: {formatCurrency(data.total)}</p>
+                          </div>
+                          {sectionInfo.status ? (
+                            <p className="section-status" style={{ color: getStatusColor(sectionInfo.status) }}>
+                              Status: {sectionInfo.status}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div className="section-card-body">
+                          {paymentMethodItems.length ? (
+                            <div className="breakdown-section">
+                              <h4 className="breakdown-title">Top payment methods</h4>
+                              {paymentMethodItems}
+                            </div>
+                          ) : null}
+
+                          {costTypeItems.length ? (
+                            <div className="breakdown-section">
+                              <h4 className="breakdown-title">Top cost types</h4>
+                              {costTypeItems}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </section>
+          ) : null}
+
+          {/* Filters */}
+          <section className="surface filters rise" style={{ '--i': 6 }}>
+            <h2 className="section-heading">Filters</h2>
+            <div className="filter-group">
+              <div className="filter-item">
+                <label htmlFor="date-from">From date</label>
+                <input
+                  type="date"
+                  id="date-from"
+                  value={filters.dateFrom}
+                  onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))}
+                />
+              </div>
+              <div className="filter-item">
+                <label htmlFor="date-to">To date</label>
+                <input
+                  type="date"
+                  id="date-to"
+                  value={filters.dateTo}
+                  onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}
+                />
+              </div>
+              <div className="filter-item">
+                <label htmlFor="section-filter">Section</label>
+                <select
+                  id="section-filter"
+                  value={filters.section}
+                  onChange={(e) => setFilters((f) => ({ ...f, section: e.target.value }))}
+                >
+                  <option value="">All sections</option>
+                  {sections.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="filter-item">
+                <label htmlFor="cost-type-filter">Cost type</label>
+                <select
+                  id="cost-type-filter"
+                  value={filters.costType}
+                  onChange={(e) => setFilters((f) => ({ ...f, costType: e.target.value }))}
+                >
+                  <option value="">All cost types</option>
+                  {costTypes.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="filter-item">
+                <label htmlFor="transaction-type-filter">Transaction type</label>
+                <select
+                  id="transaction-type-filter"
+                  value={filters.transactionType}
+                  onChange={(e) => setFilters((f) => ({ ...f, transactionType: e.target.value }))}
+                >
+                  <option value="">All transactions</option>
+                  <option value="money-in">Money in only</option>
+                  <option value="spending">Spending only</option>
+                </select>
+              </div>
+              <div className="filter-item">
+                <button id="reset-filters" className="btn-reset" onClick={resetFilters}>
+                  Reset filters
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Charts */}
+          <section className="charts">
+            {view === 'money-in' ? (
+              <>
+                <div className="surface chart-container rise" style={{ '--i': 7 }}>
+                  <h3>Money in by section</h3>
+                  <ChartCanvas type="doughnut" data={moneyInBySectionChart.data} options={moneyInBySectionChart.options} />
+                </div>
+                <div className="surface chart-container rise" style={{ '--i': 8 }}>
+                  <h3>Money in by method</h3>
+                  <ChartCanvas type="bar" data={moneyInByMethodChart.data} options={moneyInByMethodChart.options} />
+                </div>
+              </>
+            ) : view === 'payment-method' ? (
+              <>
+                <div className="surface chart-container rise" style={{ '--i': 7 }}>
+                  <h3>Spending by payment method</h3>
+                  <ChartCanvas
+                    type="bar"
+                    data={spendingByPaymentMethodChart.data}
+                    options={spendingByPaymentMethodChart.options}
+                  />
+                </div>
+                <div className="surface chart-container rise" style={{ '--i': 8 }}>
+                  <h3>Spending by cost type</h3>
+                  <ChartCanvas type="bar" data={costTypeChart.data} options={costTypeChart.options} />
+                </div>
+              </>
             ) : (
-              sectionCards.map(([section, data]) => {
-                const sectionInfo = settingsData[section] || {};
-
-                const costTypeItems = Object.entries(data.costTypes || {})
-                  .sort((a, b) => b[1] - a[1])
-                  .slice(0, 3)
-                  .map(([type, amount]) => {
-                    const percentage = data.total ? ((amount / data.total) * 100).toFixed(1) : '0.0';
-                    return (
-                      <div className="cost-type-item" key={`ct-${section}-${type}`}>
-                        <span className="cost-type-label" style={{ backgroundColor: getCostTypeColor(type) }}>
-                          {type}
-                        </span>
-                        <span className="cost-type-amount">
-                          {formatCurrency(amount)} ({percentage}%)
-                        </span>
-                      </div>
-                    );
-                  });
-
-                const paymentMethodItems = Object.entries(data.paymentMethods || {})
-                  .sort((a, b) => b[1] - a[1])
-                  .slice(0, 2)
-                  .map(([method, amount]) => {
-                    const percentage = data.total ? ((amount / data.total) * 100).toFixed(1) : '0.0';
-                    return (
-                      <div className="payment-method-item" key={`pm-${section}-${method}`}>
-                        <span className="payment-method-label">{method || 'Not specified'}</span>
-                        <span className="payment-method-amount">
-                          {formatCurrency(amount)} ({percentage}%)
-                        </span>
-                      </div>
-                    );
-                  });
-
-                return (
-                  <div
-                    className="section-card clickable"
-                    key={section}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setView({ view: 'section', section, moneyInMethod: '', paymentMethod: '' })}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        setView({ view: 'section', section, moneyInMethod: '', paymentMethod: '' });
-                      }
-                    }}
-                  >
-                    <div className="section-card-header">
-                      <h3>{section}</h3>
-                      <div className="section-card-totals">
-                        {data.moneyIn > 0 ? (
-                          <p className="section-card-money-in">Received: {formatCurrency(data.moneyIn)}</p>
-                        ) : null}
-                        <p className="section-card-total">Spent: {formatCurrency(data.total)}</p>
-                      </div>
-                      {sectionInfo.status ? (
-                        <p
-                          className="section-status"
-                          style={{ color: getStatusColor(sectionInfo.status), fontSize: '0.85rem', marginTop: 8 }}
-                        >
-                          Status: {sectionInfo.status}
-                        </p>
-                      ) : null}
-                    </div>
-
-                    <div className="section-card-body">
-                      {paymentMethodItems.length ? (
-                        <div className="breakdown-section">
-                          <h4
-                            style={{
-                              fontSize: '0.9rem',
-                              color: 'var(--text-secondary)',
-                              marginBottom: 8,
-                              fontWeight: 600,
-                            }}
-                          >
-                            Top payment methods
-                          </h4>
-                          {paymentMethodItems}
-                        </div>
-                      ) : null}
-
-                      {costTypeItems.length ? (
-                        <div className="breakdown-section">
-                          <h4
-                            style={{
-                              fontSize: '0.9rem',
-                              color: 'var(--text-secondary)',
-                              marginBottom: 8,
-                              fontWeight: 600,
-                              marginTop: 12,
-                            }}
-                          >
-                            Top cost types
-                          </h4>
-                          {costTypeItems}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })
+              <>
+                <div className="surface chart-container rise" style={{ '--i': 7 }}>
+                  <h3>Spending by section</h3>
+                  <ChartCanvas type="doughnut" data={sectionChart.data} options={sectionChart.options} />
+                </div>
+                <div className="surface chart-container rise" style={{ '--i': 8 }}>
+                  <h3>Spending by cost type</h3>
+                  <ChartCanvas type="bar" data={costTypeChart.data} options={costTypeChart.options} />
+                </div>
+              </>
             )}
-          </div>
-        </section>
-      ) : null}
 
-      {/* Filters */}
-      <section className="filters">
-        <h2>Filters</h2>
-        <div className="filter-group">
-          <div className="filter-item">
-            <label htmlFor="date-from">From Date:</label>
-            <input
-              type="date"
-              id="date-from"
-              value={filters.dateFrom}
-              onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))}
-            />
-          </div>
-          <div className="filter-item">
-            <label htmlFor="date-to">To Date:</label>
-            <input
-              type="date"
-              id="date-to"
-              value={filters.dateTo}
-              onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}
-            />
-          </div>
-          <div className="filter-item">
-            <label htmlFor="section-filter">Section:</label>
-            <select
-              id="section-filter"
-              value={filters.section}
-              onChange={(e) => setFilters((f) => ({ ...f, section: e.target.value }))}
-            >
-              <option value="">All Sections</option>
-              {sections.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="filter-item">
-            <label htmlFor="cost-type-filter">Cost Type:</label>
-            <select
-              id="cost-type-filter"
-              value={filters.costType}
-              onChange={(e) => setFilters((f) => ({ ...f, costType: e.target.value }))}
-            >
-              <option value="">All Cost Types</option>
-              {costTypes.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="filter-item">
-            <label htmlFor="transaction-type-filter">Transaction Type:</label>
-            <select
-              id="transaction-type-filter"
-              value={filters.transactionType}
-              onChange={(e) => setFilters((f) => ({ ...f, transactionType: e.target.value }))}
-            >
-              <option value="">All Transactions</option>
-              <option value="money-in">Money In Only</option>
-              <option value="spending">Spending Only</option>
-            </select>
-          </div>
-          <div className="filter-item">
-            <button id="reset-filters" className="btn-reset" onClick={resetFilters}>
-              Reset Filters
-            </button>
-          </div>
-        </div>
-      </section>
+            <div className="surface chart-container rise" style={{ '--i': 9 }}>
+              <h3>Monthly cash flow</h3>
+              <ChartCanvas type="bar" data={monthlyCashflowChart.data} options={monthlyCashflowChart.options} />
+            </div>
 
-      {/* Charts */}
-      <section className="charts">
-        {view === 'money-in' ? (
-          <>
-            <div className="chart-container">
-              <h3>Money In by Section</h3>
-              <ChartCanvas type="pie" data={moneyInBySectionChart.data} options={moneyInBySectionChart.options} />
+            <div className="surface chart-container rise" style={{ '--i': 10 }}>
+              <h3>Largest expenses</h3>
+              <div className="expense-list">
+                {topExpenses.length === 0 ? (
+                  <p className="loading">No spending in the selected range.</p>
+                ) : (
+                  topExpenses.map((t, rank) => (
+                    <div className="expense-row" key={`${t.originalIndex}-${rank}`}>
+                      <span className="expense-rank">{String(rank + 1).padStart(2, '0')}</span>
+                      <span className="expense-desc">
+                        {t.taskDescription || 'No description'}
+                        <span className="expense-context">
+                          {t.section}
+                          {t.date ? ` · ${formatDateFull(t.date)}` : ''}
+                        </span>
+                      </span>
+                      <span className="expense-amount money">{formatCurrency(t.spending)}</span>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-            <div className="chart-container">
-              <h3>Money In by Method</h3>
-              <ChartCanvas type="bar" data={moneyInByMethodChart.data} options={moneyInByMethodChart.options} />
-            </div>
-          </>
-        ) : view === 'payment-method' ? (
-          <>
-            <div className="chart-container">
-              <h3>Spending by Payment Method</h3>
-              <ChartCanvas type="bar" data={spendingByPaymentMethodChart.data} options={spendingByPaymentMethodChart.options} />
-            </div>
-            <div className="chart-container">
-              <h3>Spending by Cost Type</h3>
-              <ChartCanvas type="bar" data={costTypeChart.data} options={costTypeChart.options} />
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="chart-container">
-              <h3>Spending by Section</h3>
-              <ChartCanvas type="pie" data={sectionChart.data} options={sectionChart.options} />
-            </div>
-            <div className="chart-container">
-              <h3>Spending by Cost Type</h3>
-              <ChartCanvas type="bar" data={costTypeChart.data} options={costTypeChart.options} />
-            </div>
-          </>
-        )}
-        <div className="chart-container">
-          <h3>Timeline: Money In vs Spending</h3>
-          <ChartCanvas type="line" data={timelineChart.data} options={timelineChart.options} />
-        </div>
-      </section>
 
-      {/* Transaction Table */}
-      <section className="transactions">
-        <h2>Transaction Details</h2>
-        <div className="table-container">
-          <table id="transaction-table">
-            <thead>
-              <tr>
-                <th onClick={() => onHeaderClick('date')}>Date</th>
-                <th onClick={() => onHeaderClick('section')}>Section</th>
-                <th onClick={() => onHeaderClick('taskDescription')}>Task / Description</th>
-                <th onClick={() => onHeaderClick('costType')}>Cost Type</th>
-                <th onClick={() => onHeaderClick('moneyIn')}>Money In</th>
-                <th onClick={() => onHeaderClick('moneyInMethod')}>Money In Method</th>
-                <th onClick={() => onHeaderClick('spending')}>Spending</th>
-                <th onClick={() => onHeaderClick('paymentMethod')}>Payment Method</th>
-                <th onClick={() => onHeaderClick('balance')}>Running Balance</th>
-              </tr>
-            </thead>
-            <tbody id="transaction-tbody">
-              {tableRows.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="loading">
-                    {loading ? 'Loading data from Google Sheets...' : 'No transactions found matching the filters.'}
-                  </td>
-                </tr>
-              ) : (
-                tableRows.map((t, idx) => (
-                  <tr key={`${t.originalIndex}-${idx}`}>
-                    <td>{formatDateFull(t.date)}</td>
-                    <td>{t.section}</td>
-                    <td>{t.taskDescription || '-'}</td>
-                    <td>{t.costType}</td>
-                    <td className={`number ${t.moneyIn > 0 ? 'positive' : ''}`}>
-                      {t.moneyIn > 0 ? formatCurrency(t.moneyIn) : '-'}
-                    </td>
-                    <td>{t.moneyInMethod || '-'}</td>
-                    <td className={`number ${t.spending > 0 ? 'negative' : ''}`}>
-                      {t.spending > 0 ? formatCurrency(t.spending) : '-'}
-                    </td>
-                    <td>{t.paymentMethod || '-'}</td>
-                    <td className={`number ${t.balance >= 0 ? 'positive' : 'negative'}`}>{formatCurrency(t.balance)}</td>
+            <div className="surface chart-container full-width rise" style={{ '--i': 11 }}>
+              <h3>Cash position over time</h3>
+              <ChartCanvas type="line" data={cashPositionChart.data} options={cashPositionChart.options} />
+            </div>
+          </section>
+
+          {/* Transaction Table */}
+          <section className="surface transactions rise" style={{ '--i': 12 }}>
+            <h2 className="section-heading">Transaction details</h2>
+            <div className="table-container">
+              <table id="transaction-table">
+                <thead>
+                  <tr>
+                    <th onClick={() => onHeaderClick('date')}>Date</th>
+                    <th onClick={() => onHeaderClick('section')}>Section</th>
+                    <th onClick={() => onHeaderClick('taskDescription')}>Task / Description</th>
+                    <th onClick={() => onHeaderClick('costType')}>Cost Type</th>
+                    <th onClick={() => onHeaderClick('moneyIn')}>Money In</th>
+                    <th onClick={() => onHeaderClick('moneyInMethod')}>Money In Method</th>
+                    <th onClick={() => onHeaderClick('spending')}>Spending</th>
+                    <th onClick={() => onHeaderClick('paymentMethod')}>Payment Method</th>
+                    <th onClick={() => onHeaderClick('balance')}>Running Balance</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+                </thead>
+                <tbody id="transaction-tbody">
+                  {tableRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="loading">
+                        {loading ? 'Loading data from Google Sheets...' : 'No transactions found matching the filters.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    tableRows.map((t, idx) => (
+                      <tr key={`${t.originalIndex}-${idx}`}>
+                        <td>{formatDateFull(t.date)}</td>
+                        <td>{t.section}</td>
+                        <td>{t.taskDescription || '-'}</td>
+                        <td>{t.costType}</td>
+                        <td className={`number ${t.moneyIn > 0 ? 'positive' : ''}`}>
+                          {t.moneyIn > 0 ? formatCurrency(t.moneyIn) : '-'}
+                        </td>
+                        <td>{t.moneyInMethod || '-'}</td>
+                        <td className={`number ${t.spending > 0 ? 'negative' : ''}`}>
+                          {t.spending > 0 ? formatCurrency(t.spending) : '-'}
+                        </td>
+                        <td>{t.paymentMethod || '-'}</td>
+                        <td className={`number ${t.balance >= 0 ? 'positive' : 'negative'}`}>
+                          {formatCurrency(t.balance)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
 
-      {/* Loading Overlay */}
-      <div className={`loading-overlay ${loading ? '' : 'hidden'}`}>
-        <div className="spinner"></div>
-        <p>Loading data from Google Sheets...</p>
-      </div>
+          {/* Loading Overlay */}
+          <div className={`loading-overlay ${loading ? '' : 'hidden'}`}>
+            <div className="spinner"></div>
+            <p>Loading data from Google Sheets...</p>
+          </div>
         </div>
       </main>
     </div>
   );
 }
-
