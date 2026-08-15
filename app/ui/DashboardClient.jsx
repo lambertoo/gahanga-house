@@ -341,6 +341,25 @@ function buildBar(labels, data, colors) {
   };
 }
 
+function SegmentedControl({ options, value, onChange }) {
+  return (
+    <div className="segmented" role="tablist">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          role="tab"
+          aria-selected={option.value === value}
+          className={`segment ${option.value === value ? 'active' : ''}`}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function StatCard({ label, value, note, tone, index }) {
   return (
     <div className="surface stat-card rise" style={{ '--i': index }}>
@@ -959,6 +978,20 @@ export default function DashboardClient() {
           >
             Overview
           </button>
+          <button
+            className={`nav-item ${view === 'money-in' ? 'active' : ''}`}
+            onClick={() => navTo({ view: 'money-in', moneyInMethod: '', section: '', paymentMethod: '' })}
+            type="button"
+          >
+            Money In
+          </button>
+          <button
+            className={`nav-item ${view === 'payment-method' ? 'active' : ''}`}
+            onClick={() => navTo({ view: 'payment-method', paymentMethod: '', section: '', moneyInMethod: '' })}
+            type="button"
+          >
+            Spending
+          </button>
 
           <div className="nav-section">
             <div className="nav-section-title">Sections</div>
@@ -974,47 +1007,6 @@ export default function DashboardClient() {
             ))}
           </div>
 
-          <div className="nav-section">
-            <div className="nav-section-title">Money In</div>
-            <button
-              className={`nav-item ${view === 'money-in' && !viewMoneyInMethod ? 'active' : ''}`}
-              onClick={() => navTo({ view: 'money-in', moneyInMethod: '', section: '', paymentMethod: '' })}
-              type="button"
-            >
-              All Money In
-            </button>
-            {moneyInMethods.map((m) => (
-              <button
-                key={m}
-                className={`nav-item ${view === 'money-in' && viewMoneyInMethod === m ? 'active' : ''}`}
-                onClick={() => navTo({ view: 'money-in', moneyInMethod: m, section: '', paymentMethod: '' })}
-                type="button"
-              >
-                {m}
-              </button>
-            ))}
-          </div>
-
-          <div className="nav-section">
-            <div className="nav-section-title">Spending</div>
-            <button
-              className={`nav-item ${view === 'payment-method' && !viewPaymentMethod ? 'active' : ''}`}
-              onClick={() => navTo({ view: 'payment-method', paymentMethod: '', section: '', moneyInMethod: '' })}
-              type="button"
-            >
-              All Spending
-            </button>
-            {paymentMethods.map((m) => (
-              <button
-                key={m}
-                className={`nav-item ${view === 'payment-method' && viewPaymentMethod === m ? 'active' : ''}`}
-                onClick={() => navTo({ view: 'payment-method', paymentMethod: m, section: '', moneyInMethod: '' })}
-                type="button"
-              >
-                {m}
-              </button>
-            ))}
-          </div>
         </nav>
       </aside>
 
@@ -1060,6 +1052,26 @@ export default function DashboardClient() {
                 Retry
               </button>
             </section>
+          ) : null}
+
+          {view === 'money-in' ? (
+            <div className="segmented-row rise" style={{ '--i': 0 }}>
+              <SegmentedControl
+                options={[{ value: '', label: 'All methods' }, ...moneyInMethods.map((m) => ({ value: m, label: m }))]}
+                value={viewMoneyInMethod}
+                onChange={(m) => setView({ view: 'money-in', moneyInMethod: m, section: '', paymentMethod: '' })}
+              />
+            </div>
+          ) : null}
+
+          {view === 'payment-method' ? (
+            <div className="segmented-row rise" style={{ '--i': 0 }}>
+              <SegmentedControl
+                options={[{ value: '', label: 'All methods' }, ...paymentMethods.map((m) => ({ value: m, label: m }))]}
+                value={viewPaymentMethod}
+                onChange={(m) => setView({ view: 'payment-method', paymentMethod: m, section: '', moneyInMethod: '' })}
+              />
+            </div>
           ) : null}
 
           {/* Hero */}

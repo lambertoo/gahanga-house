@@ -227,6 +227,57 @@ button {
   }
 }
 
+/* ---------- Segmented control ---------- */
+
+.segmented-row {
+  margin-bottom: 20px;
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  background: var(--paper-deep);
+  border: 1px solid var(--hairline-soft);
+  border-radius: 999px;
+  padding: 3px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.segment {
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+  font-weight: 500;
+  padding: 7px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.segment:hover {
+  color: var(--ink);
+}
+
+.segment:active {
+  transform: scale(0.97);
+}
+
+.segment.active {
+  background: var(--card);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--shadow-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segment {
+    transition: none;
+  }
+}
+
 /* ---------- Hero / KPIs ---------- */
 
 .hero {
