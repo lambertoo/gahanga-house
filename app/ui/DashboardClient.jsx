@@ -440,22 +440,29 @@ export default function DashboardClient() {
     setError(null);
 
     try {
-      // DETAILS
-      let detailsParsed;
-      try {
-        const detailsCsv = await fetchSheetCsv({ sheet: 'details', format: 'pub' });
-        if (detailsCsv.trim().startsWith('<') || !detailsCsv.trim()) {
-          throw new Error('Received HTML/empty instead of CSV');
-        }
-        detailsParsed = parseCsv(detailsCsv);
+      // DETAILS (the published-CSV endpoint hiccups occasionally, so retry before surfacing an error)
+      let detailsParsed = null;
+      for (let attempt = 0; attempt < 3 && !detailsParsed; attempt++) {
+        try {
+          if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 900));
+          const detailsCsv = await fetchSheetCsv({ sheet: 'details', format: 'pub' });
+          if (detailsCsv.trim().startsWith('<') || !detailsCsv.trim()) {
+            throw new Error('Received HTML/empty instead of CSV');
+          }
+          const parsed = parseCsv(detailsCsv);
 
-        const hasDate = detailsParsed.meta.fields?.some((f) => f.toLowerCase().includes('date') || f.toLowerCase() === 'date');
-        const hasCost = detailsParsed.meta.fields?.some((f) => f.toLowerCase() === 'cost');
-        const hasMoneyIn = detailsParsed.meta.fields?.some((f) => f.toLowerCase().includes('money') || f.toLowerCase() === 'money in');
-        if (!hasDate || (!hasCost && !hasMoneyIn) || !detailsParsed.data?.length) {
-          throw new Error('Data does not match Details sheet format');
+          const hasDate = parsed.meta.fields?.some((f) => f.toLowerCase().includes('date') || f.toLowerCase() === 'date');
+          const hasCost = parsed.meta.fields?.some((f) => f.toLowerCase() === 'cost');
+          const hasMoneyIn = parsed.meta.fields?.some((f) => f.toLowerCase().includes('money') || f.toLowerCase() === 'money in');
+          if (!hasDate || (!hasCost && !hasMoneyIn) || !parsed.data?.length) {
+            throw new Error('Data does not match Details sheet format');
+          }
+          detailsParsed = parsed;
+        } catch {
+          // retry with backoff, then fall through to the gid scan
         }
-      } catch {
+      }
+      if (!detailsParsed) {
         const detailsResult = await findSheetByGid([2, 0, 1, 3, 4, 5], 'Details');
         if (!detailsResult) {
           throw new Error(
