@@ -309,21 +309,20 @@ footer{
 
   <!-- ================= 2. THE FIX ================= -->
   <section>
-    <div class="sec-head"><span class="sec-num">S-2</span><h2>The fix: a curved-soffit concrete jacket</h2></div>
+    <div class="sec-head"><span class="sec-num">S-2</span><h2>The fix: a reinforced-concrete jacket</h2></div>
     <p>
       New concrete and new reinforcement are cast around the existing beam, turning the
-      <span class="mono">200 × 350</span> into a <span class="mono">300</span>-wide beam that is
-      <span class="mono">700–750</span> deep at midspan and tapers along a smooth curve to
-      <span class="mono">450–500</span> at the columns — a <b>fish-belly beam</b>. The shape follows the
-      bending-moment diagram: maximum depth exactly where the bending is maximum, less concrete where it
-      isn't needed, and a far better look over the parking than a heavy flat beam. It keeps the front
-      fully open, uses the crew's existing skills, and — done per this sequence — is a permanent
-      structural member, not a patch. Headroom stays generous: ≈ 2.75&nbsp;m clear at midspan, more
-      towards the edges.
+      <span class="mono">200 × 350</span> into a <b>flat, uniform</b> <span class="mono">300 × 700–750</span>
+      beam correctly sized for 9&nbsp;m. The flat shape was chosen deliberately over curved (fish-belly or
+      arched) alternatives: straight formwork is the detail with the fewest ways to go wrong on a
+      safety-critical repair, and the clean straight line suits the house's modern architecture. If an
+      arched look is ever wanted over the parking, it gets added later as a <b>cosmetic, non-structural
+      fascia</b> under this beam — never by shaping the structure itself. Headroom stays generous:
+      ≈ 2.75&nbsp;m clear under the full length of the beam.
     </p>
 
     <figure class="fig">
-      <svg viewBox="0 0 760 356" role="img" aria-label="Elevation of the fish-belly jacket: the existing straight beam stays inside, new concrete below it forms a curved soffit 700 to 750 deep at midspan tapering to 450 to 500 at the columns, the new T20 bottom bars follow the curve and anchor into collars at both columns, and the design works as a beam with no arch thrust on the columns">
+      <svg viewBox="0 0 760 356" role="img" aria-label="Elevation of the flat jacket: the existing straight beam stays inside, new concrete below and beside it forms a uniform beam 700 to 750 deep along the whole 9 metre span, the new T20 bottom bars run straight and bend up into reinforced collars cast around both columns">
         <defs>
           <marker id="ar5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
@@ -337,34 +336,36 @@ footer{
         <!-- columns -->
         <rect x="52" y="56" width="24" height="248" fill="none" stroke="currentColor" stroke-width="1.6"/>
         <rect x="684" y="56" width="24" height="248" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <text x="64" y="290" text-anchor="middle" font-size="11" fill="currentColor" opacity=".8">column</text>
+        <text x="696" y="290" text-anchor="middle" font-size="11" fill="currentColor" opacity=".8">column</text>
         <!-- collars -->
         <path d="M40 100 L108 100 L108 220 L40 220 Z" fill="url(#newconc3)" stroke="#B4491B" stroke-width="1.8"/>
         <path d="M652 100 L720 100 L720 220 L652 220 Z" fill="url(#newconc3)" stroke="#B4491B" stroke-width="1.8"/>
+        <text x="74" y="240" text-anchor="middle" font-size="11" fill="#B4491B" font-weight="600">collar</text>
+        <text x="686" y="240" text-anchor="middle" font-size="11" fill="#B4491B" font-weight="600">collar</text>
         <!-- existing beam, dashed -->
         <rect x="76" y="56" width="608" height="56" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 4"/>
         <text x="380" y="80" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".8">existing 200 × 350 beam — stays, roughened</text>
-        <!-- new jacket depth, curved soffit -->
-        <path d="M108 112 L652 112 L652 128 Q380 224 108 128 Z" fill="url(#newconc3)" stroke="#B4491B" stroke-width="2"/>
-        <text x="380" y="140" text-anchor="middle" font-size="11.5" fill="currentColor">new concrete — curved soffit</text>
-        <!-- bottom bars following the curve, hooked into collars -->
-        <path d="M96 130 L96 168 Q96 176 110 178 Q380 214 650 178 Q664 176 664 168 L664 130"
+        <!-- new jacket depth, straight soffit -->
+        <path d="M108 112 L652 112 L652 178 L108 178 Z" fill="url(#newconc3)" stroke="#B4491B" stroke-width="2"/>
+        <text x="380" y="140" text-anchor="middle" font-size="11.5" fill="currentColor">new concrete — flat soffit, uniform depth full length</text>
+        <!-- bottom bars, straight, hooked up into collars -->
+        <path d="M96 130 L96 160 Q96 168 110 168 L650 168 Q664 168 664 160 L664 130"
               fill="none" stroke="#B4491B" stroke-width="4" stroke-linecap="round"/>
-        <text x="380" y="234" text-anchor="middle" font-size="11.5" fill="#B4491B" font-weight="600">4 T20 bottom bars follow the curve, bent up into the collars</text>
-        <!-- depth dims -->
-        <line x1="386" y1="56" x2="386" y2="200" stroke="currentColor" stroke-width="1.1" marker-start="url(#ar5)" marker-end="url(#ar5)"/>
-        <text x="396" y="176" font-size="12" fill="currentColor" font-family="ui-monospace,monospace">700–750</text>
-        <line x1="132" y1="56" x2="132" y2="129" stroke="currentColor" stroke-width="1.1" marker-start="url(#ar5)" marker-end="url(#ar5)"/>
-        <text x="142" y="126" font-size="12" fill="currentColor" font-family="ui-monospace,monospace">450–500</text>
+        <text x="380" y="204" text-anchor="middle" font-size="11.5" fill="#B4491B" font-weight="600">4 T20 bottom bars run straight, bent up into the collars</text>
+        <!-- depth dim -->
+        <line x1="386" y1="56" x2="386" y2="178" stroke="currentColor" stroke-width="1.1" marker-start="url(#ar5)" marker-end="url(#ar5)"/>
+        <text x="396" y="150" font-size="12" fill="currentColor" font-family="ui-monospace,monospace">700–750</text>
         <!-- headroom note -->
-        <text x="380" y="268" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".8">≈ 2.75 m clear under midspan</text>
+        <text x="380" y="240" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".8">≈ 2.75 m clear under the beam, full length</text>
         <!-- ground -->
         <line x1="20" y1="304" x2="740" y2="304" stroke="currentColor" stroke-width="1.5"/>
-        <text x="380" y="334" text-anchor="middle" font-size="12.5" fill="currentColor" font-weight="600">Designed as a BEAM — the bars carry the tension. No arch thrust on the columns.</text>
+        <text x="380" y="334" text-anchor="middle" font-size="12.5" fill="currentColor" font-weight="600">Straight soffit = simplest formwork, nothing for the crew to misread.</text>
       </svg>
-      <figcaption><b>Fig. 2 — the fish-belly jacket, elevation.</b> Depth follows the bending-moment diagram: full 700–750 at midspan where bending peaks, tapering to 450–500 at the columns — never less, because shear peaks there. One smooth curve, no kinks. If TIPSTEP's calculation mentions "arch action" or thrust resisted by the columns, push back: the 200 × 200 columns cannot take horizontal thrust, and the bar areas must work as pure beam bending.</figcaption>
+      <figcaption><b>Fig. 2 — the jacket in elevation.</b> Uniform 300 × 700–750 along the whole span; the new bars run straight at constant depth and anchor into the collars at both columns. Any arched appearance, if wanted later, is a light cosmetic fascia fixed under this beam — it must never replace or reshape the structural section.</figcaption>
     </figure>
 
-    <figure class="fig">
+        <figure class="fig">
       <svg viewBox="0 0 760 470" role="img" aria-label="Cross-sections before and after: the existing 200 by 350 beam, and the same beam wrapped in a 300 by 700 reinforced concrete jacket with four T20 bottom bars, T8 links and resin-set dowels tying old to new">
         <defs>
           <marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
@@ -429,21 +430,68 @@ footer{
         <text x="570" y="165" text-anchor="middle" font-size="11" fill="currentColor" opacity=".8">existing beam,</text>
         <text x="570" y="178" text-anchor="middle" font-size="11" fill="currentColor" opacity=".8">roughened all round</text>
       </svg>
-      <figcaption><b>Fig. 3 — before and after, cross-section at midspan.</b> Hatched zone is new concrete. Towards the columns the same section tapers to 450–500 total depth per Fig.&nbsp;2. The new bottom bars sit at ~700&nbsp;mm effective depth at midspan — that depth, not the extra concrete, is what multiplies the strength by five.</figcaption>
+      <figcaption><b>Fig. 3 — before and after, cross-section.</b> Hatched zone is new concrete. The section is the same along the whole span; at the columns it arrives into the collars shown in Fig.&nbsp;4 and Fig.&nbsp;6. The new bottom bars sit at ~700&nbsp;mm effective depth — that depth, not the extra concrete, is what multiplies the strength by five.</figcaption>
+    </figure>
+
+    <figure class="fig">
+      <svg viewBox="0 0 680 400" role="img" aria-label="Plan view at one column: the 200 by 200 column sits inside a reinforced collar at least 200 millimetres all round, the 300 wide jacketed beam arrives from the span side, and the four T20 bottom bars run into the collar where they bend down for anchorage">
+        <defs>
+          <marker id="ar6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+          <pattern id="newconc4" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="9" stroke="#B4491B" stroke-width="1" opacity=".5"/>
+          </pattern>
+        </defs>
+        <text x="340" y="26" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">PLAN AT THE COLUMN</text>
+        <!-- collar -->
+        <rect x="70" y="60" width="270" height="270" fill="url(#newconc4)" stroke="#B4491B" stroke-width="2"/>
+        <!-- column -->
+        <rect x="160" y="150" width="90" height="90" fill="none" stroke="currentColor" stroke-width="2"/>
+        <text x="205" y="200" text-anchor="middle" font-size="11.5" fill="currentColor">column</text>
+        <text x="205" y="214" text-anchor="middle" font-size="11" fill="currentColor" font-family="ui-monospace,monospace">200×200</text>
+        <!-- beam arriving from the right -->
+        <path d="M340 128 L640 128 L640 262 L340 262 Z" fill="url(#newconc4)" stroke="#B4491B" stroke-width="2"/>
+        <!-- existing beam dashed inside -->
+        <rect x="340" y="150" width="300" height="90" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="6 4"/>
+        <text x="500" y="200" text-anchor="middle" font-size="11" fill="currentColor" opacity=".8">existing beam 200 wide</text>
+        <!-- 4 bars entering collar, ends ticked (bend down out of plane) -->
+        <g stroke="#B4491B" stroke-width="3.5" stroke-linecap="round">
+          <line x1="640" y1="140" x2="130" y2="140"/>
+          <line x1="640" y1="178" x2="130" y2="178"/>
+          <line x1="640" y1="212" x2="130" y2="212"/>
+          <line x1="640" y1="250" x2="130" y2="250"/>
+        </g>
+        <g stroke="#B4491B" stroke-width="3">
+          <line x1="130" y1="132" x2="130" y2="148"/>
+          <line x1="130" y1="170" x2="130" y2="186"/>
+          <line x1="130" y1="204" x2="130" y2="220"/>
+          <line x1="130" y1="242" x2="130" y2="258"/>
+        </g>
+        <!-- dims -->
+        <line x1="70" y1="352" x2="340" y2="352" stroke="currentColor" stroke-width="1.1" marker-start="url(#ar6)" marker-end="url(#ar6)"/>
+        <text x="205" y="372" text-anchor="middle" font-size="12" fill="currentColor" font-family="ui-monospace,monospace">≥ 600 (collar: ≥ 200 beyond column, all round)</text>
+        <line x1="654" y1="128" x2="654" y2="262" stroke="currentColor" stroke-width="1.1" marker-start="url(#ar6)" marker-end="url(#ar6)"/>
+        <text x="664" y="200" font-size="12" fill="currentColor" font-family="ui-monospace,monospace">300</text>
+        <!-- labels -->
+        <text x="70" y="48" font-size="11.5" fill="#B4491B" font-weight="600">reinforced collar around the column</text>
+        <text x="480" y="290" text-anchor="middle" font-size="11.5" fill="#B4491B" font-weight="600">4 T20 bars run into the collar, then bend down (see Fig. 6)</text>
+      </svg>
+      <figcaption><b>Fig. 4 — plan at the column, as requested.</b> The jacketed beam arrives at the 200 × 200 column and its bars pass into the reinforced collar, where they bend down for full anchorage. The tick marks on the bar ends show where they turn down out of the plan view — the vertical leg is drawn in Fig.&nbsp;6.</figcaption>
     </figure>
 
     <h3>Target specification <span class="muted small" style="font-weight:400">— hold TIPSTEP's signed design against these</span></h3>
     <div class="tbl-wrap"><table>
       <thead><tr><th>Item</th><th>Target</th><th>Why it matters</th></tr></thead>
       <tbody>
-        <tr><td>Final section</td><td class="num">300 wide · 700–750 deep at midspan, curving to 450–500 at columns</td><td>Anything shallower than ~650 mm at midspan or ~450 at the ends: push back.</td></tr>
-        <tr><td>Design basis</td><td>Beam action only (fish-belly shape)</td><td>No arch thrust on the 200×200 columns — bars carry all tension.</td></tr>
+        <tr><td>Final section</td><td class="num">300 × 700–750 mm, uniform full length</td><td>Anything shallower than ~650 mm total: push back.</td></tr>
+        <tr><td>Design basis</td><td>Flat uniform beam — bars carry all tension</td><td>Any arch look = cosmetic fascia only, added later, never structural.</td></tr>
         <tr><td>New bottom steel</td><td class="num">4 T20 (or 5 T16)</td><td>The main flexural steel for the 9 m span.</td></tr>
         <tr><td>New links</td><td class="num">T8 @ 150, @ 100 within 1.0 m of columns</td><td>Closed stirrups around the full new section; closer at ends for shear.</td></tr>
         <tr><td>Dowels old→new</td><td class="num">T12 @ 250, resin anchors, 100 mm embed</td><td>Makes old and new act as one beam.</td></tr>
         <tr><td>Concrete</td><td class="num">C25/30 · 10 mm agg. · plasticised</td><td>Small aggregate + flow so it fills under the old soffit with no voids.</td></tr>
         <tr><td>Cover</td><td class="num">35 mm</td><td>Durability of the new bars.</td></tr>
-        <tr><td>End anchorage</td><td>Bars into collars cast at both columns</td><td>See Fig. 5 — <b>the fix fails without this</b>.</td></tr>
+        <tr><td>End anchorage</td><td>Bars into collars cast at both columns</td><td>See Figs. 4 &amp; 6 — <b>the fix fails without this</b>.</td></tr>
         <tr><td>End columns &amp; footings</td><td>Checked for ≈ 140 kN reaction each</td><td>The whole 9 m of load now lands on two columns.</td></tr>
         <tr><td>Props after casting</td><td class="num">28 days</td><td>New concrete reaches strength before carrying load.</td></tr>
       </tbody>
@@ -489,12 +537,12 @@ footer{
         <text x="470" y="222" font-size="12" fill="currentColor">steel acrow props, or doubled eucalyptus on timber sole plates,</text>
         <text x="470" y="238" font-size="12" fill="currentColor">on firm ground — tightened to lift the beam 3–5 mm</text>
       </svg>
-      <figcaption><b>Fig. 4 — Step 01, the propping.</b> Tightening until the beam lifts a few millimetres transfers its load into the props — essential, so the jacket is cast onto an unloaded beam and truly carries load once cured.</figcaption>
+      <figcaption><b>Fig. 5 — Step 01, the propping.</b> Tightening until the beam lifts a few millimetres transfers its load into the props — essential, so the jacket is cast onto an unloaded beam and truly carries load once cured.</figcaption>
     </figure>
 
     <div class="steps">
       <div class="step"><span class="when">today</span><h4>Prop and relieve</h4>
-        <p>Props at <b>≤ 1.5 m centres</b> per Fig. 4, snugged then tightened to lift the beam <b>3–5 mm</b>. Props bear on sole plates on firm ground — never loose fill.</p></div>
+        <p>Props at <b>≤ 1.5 m centres</b> per Fig. 5, snugged then tightened to lift the beam <b>3–5 mm</b>. Props bear on sole plates on firm ground — never loose fill.</p></div>
       <div class="step"><span class="when">today</span><h4>Freeze all loading above</h4>
         <p>No concrete pours and <b>no brickwork</b> on any bay that loads this beam until the jacket is cast and cured. Tell the masons explicitly — Section S-5.</p></div>
       <div class="step"><span class="when">this week</span><h4>Mark and monitor the cracks</h4>
@@ -506,9 +554,9 @@ footer{
       <div class="step"><span class="when">week 2</span><h4>Dowels and new cage</h4>
         <p>Drill and resin-set <b>T12 dowels @ 250 mm</b> into the old beam. Fix the new cage: 4 T20 bottom, side hangers, closed T8 links @ 150 (100 at ends). Spacers for 35 mm cover everywhere.</p></div>
       <div class="step"><span class="when">week 2</span><h4>End anchorage collars</h4>
-        <p>Cast collars around both end columns and anchor the new bottom bars into them per Fig. 5. <b>This step is the difference between a beam and a decoration.</b></p></div>
+        <p>Cast collars around both end columns and anchor the new bottom bars into them per Figs. 4 &amp; 6. <b>This step is the difference between a beam and a decoration.</b></p></div>
       <div class="step"><span class="when">week 3</span><h4>Formwork and casting</h4>
-        <p>The curved soffit needs <b>curved ribs cut from planks</b>, skinned tight — a day or two more carpentry than a flat form, and the only extra cost of the fish-belly shape. Cast <b>C25/30, 10 mm aggregate, plasticised</b>, poured through the top via cored holes or a letterbox chute, vibrated well. Top up the final contact with the old soffit using a slightly expansive grout.</p></div>
+        <p>Straight, tight forms — the flat soffit keeps this the simplest carpentry on site. Cast <b>C25/30, 10 mm aggregate, plasticised</b>, poured through the top via cored holes or a letterbox chute, vibrated well. Top up the final contact with the old soffit using a slightly expansive grout.</p></div>
       <div class="step"><span class="when">weeks 3–4</span><h4>Cure wet for 7 days</h4>
         <p>Soaked hessian or polythene-wrapped, kept wet — same rule as every pour on this site, and doubly important on a structural repair.</p></div>
       <div class="step"><span class="when">week 7</span><h4>Release at 28 days, then watch</h4>
@@ -560,7 +608,7 @@ footer{
         <line x1="142" y1="322" x2="142" y2="300" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar4)"/>
         <text x="160" y="320" font-size="12" fill="currentColor" font-family="ui-monospace,monospace">≈ 140 kN reaction — column + footing to be checked</text>
       </svg>
-      <figcaption><b>Fig. 5 — end anchorage at each column.</b> The alternative — resin-anchoring the bars into holes drilled deep into the column — is acceptable only if the engineer shows full development length. Ask which one they are doing, in writing.</figcaption>
+      <figcaption><b>Fig. 6 — end anchorage at each column, in elevation.</b> This is the vertical leg of the bars shown arriving in plan in Fig.&nbsp;4. The alternative — resin-anchoring the bars into holes drilled deep into the column — is acceptable only if the engineer shows full development length. Ask which one they are doing, in writing.</figcaption>
     </figure>
   </section>
 
@@ -611,8 +659,8 @@ footer{
     <div class="sec-head"><span class="sec-num">S-6</span><h2>Before you pay for the repair — the sign-off list</h2></div>
     <p>Take this list to TIPSTEP. Every box gets a yes, on paper, before casting day.</p>
     <ul class="check">
-      <li>Jacket drawing shows ≥ 300 wide, ≥ 650 deep at midspan curving to ≥ 450 at the columns, bottom steel ≥ 4 T20 equivalent, and link spacing with the tighter zone at the ends.</li>
-      <li>Designed as a <b>beam</b> with a curved soffit — bars carry all tension, no reliance on arch thrust against the columns; bars in one smooth curve, no kinks.</li>
+      <li>Jacket drawing shows a flat uniform section ≥ 300 × 650, bottom steel ≥ 4 T20 equivalent, and link spacing with the tighter zone at the ends.</li>
+      <li>Designed as a flat <b>beam</b> — bars carry all tension. Any arched look is a cosmetic, non-structural fascia added after the repair, never a reshaping of the structural section.</li>
       <li>End anchorage detail is drawn explicitly (collar or full-development resin anchors) — not left to the foreman.</li>
       <li>End columns and their footings checked for the ≈ 140 kN reactions, in the calculation.</li>
       <li>Wall loads in the calculation use <b>solid clay brick at ≈ 4.4 kN/m²</b>, not hollow block.</li>
