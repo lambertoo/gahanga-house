@@ -981,3 +981,8 @@ tbody tr:hover {
     break-inside: avoid;
   }
 }
+
+a.nav-item {
+  display: block;
+  text-decoration: none;
+}

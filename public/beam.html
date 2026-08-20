@@ -41,6 +41,13 @@ body{
 .mono{font-family:"Geist Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
 .display{font-family:"Fraunces",Georgia,serif}
 
+.docnav{display:flex; gap:12px; align-items:center; margin-bottom:18px;
+  font-family:"Geist Mono",ui-monospace,monospace; font-size:13px}
+.docnav a{color:var(--muted); text-decoration:none}
+.docnav a:hover{color:var(--accent)}
+.docnav a[aria-current="page"]{color:var(--accent); font-weight:500}
+.docnav .sep{color:var(--line-strong)}
+
 /* ---- title block, drawn like the drawing sheet ---- */
 .titleblock{
   background:var(--card); border:1px solid var(--line-strong); border-radius:10px;
@@ -176,6 +183,12 @@ footer{
 </style>
 
 <div class="wrap">
+
+  <nav class="docnav">
+    <a href="/">← Dashboard</a><span class="sep">·</span>
+    <a href="/beam.html" aria-current="page">Beam Repair</a><span class="sep">·</span>
+    <a href="/ideas.html">Layout Ideas</a>
+  </nav>
 
   <div class="titleblock">
     <div class="masthead">
