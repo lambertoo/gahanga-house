@@ -1018,6 +1018,7 @@ export default function DashboardClient() {
             <div className="nav-section-title">Site documents</div>
             <a className="nav-item" href="/beam.html">Beam Repair</a>
             <a className="nav-item" href="/ideas.html">Layout Ideas</a>
+            <a className="nav-item" href="/facade.html">Facade</a>
           </div>
 
         </nav>
