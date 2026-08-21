@@ -319,6 +319,15 @@ footer{
       </div>
       <p class="small muted" style="margin-top:12px">Approximate bending moments. The demand figure assumes solid clay brick walls (Section S-5) and must be recomputed and signed by the engineer of record — but the ratio is the point: the beam has roughly <b>a quarter</b> of the capacity the span asks of it.</p>
     </div>
+
+    <div class="callout warn">
+      <p><b>One question that changes the numbers — ask TIPSTEP in writing:</b> "Do the first- and
+      second-floor front columns land on this beam?" The drawings show grid columns at every level; if the
+      intermediate columns were omitted only at ground level but built above, they are <b>floating columns</b>
+      standing on this beam — concentrated point loads at midspan, which would explain the severity of the
+      cracking. The jacket concept stays the same, but the calculation must use the real point loads
+      (likely heavier bottom steel, e.g. 5–6 T20).</p>
+    </div>
   </section>
 
   <!-- ================= 2. THE FIX ================= -->
@@ -491,7 +500,7 @@ footer{
         <text x="70" y="48" font-size="11.5" fill="#B4491B" font-weight="600">reinforced collar around the column</text>
         <text x="480" y="290" text-anchor="middle" font-size="11.5" fill="#B4491B" font-weight="600">4 T20 bars run into the collar, then bend down (see Fig. 6)</text>
       </svg>
-      <figcaption><b>Fig. 4 — plan at the column, as requested.</b> The jacketed beam arrives at the 200 × 200 column and its bars pass into the reinforced collar, where they bend down for full anchorage. The tick marks on the bar ends show where they turn down out of the plan view — the vertical leg is drawn in Fig.&nbsp;6.</figcaption>
+      <figcaption><b>Fig. 4 — plan at the column.</b> The jacketed beam arrives at the 200 × 200 column and its bars pass into the reinforced zone around it, where they bend down for full anchorage. In the default scheme this zone is the top of a <b>full-height ≈ 350 × 350 column jacket</b> (Fig.&nbsp;6), which also strengthens the column for its new ≈ 140 kN reaction. The tick marks on the bar ends show where they turn down out of the plan view.</figcaption>
     </figure>
 
     <h3>Target specification <span class="muted small" style="font-weight:400">— hold TIPSTEP's signed design against these</span></h3>
@@ -506,7 +515,9 @@ footer{
         <tr><td>Concrete</td><td class="num">C25/30 · 10 mm agg. · plasticised</td><td>Small aggregate + flow so it fills under the old soffit with no voids.</td></tr>
         <tr><td>Cover</td><td class="num">35 mm</td><td>Durability of the new bars.</td></tr>
         <tr><td>End anchorage</td><td>Bars into collars cast at both columns</td><td>See Figs. 4 &amp; 6 — <b>the fix fails without this</b>.</td></tr>
-        <tr><td>End columns &amp; footings</td><td>Checked for ≈ 140 kN reaction each</td><td>The whole 9 m of load now lands on two columns.</td></tr>
+        <tr><td>End columns</td><td>Default: full-height jacket to ≈ 350×350 (4T16 added, T8 links, dowelled), footing to beam</td><td>Each 200×200 column inherits ≈ 140 kN of eccentric reaction it was never designed for. It stays 200×200 only if the calculation proves it.</td></tr>
+        <tr><td>Footings at the two columns</td><td>Checked for ≈ +100 kN service (≈ +70 kPa on a 1200×1200 pad)</td><td>Enlarge the pads if the bearing check fails.</td></tr>
+        <tr><td>Floating columns</td><td>Confirmed and included in the loading</td><td>Upper-floor columns landing on this beam = midspan point loads.</td></tr>
         <tr><td>Props after casting</td><td class="num">28 days</td><td>New concrete reaches strength before carrying load.</td></tr>
       </tbody>
     </table></div>
@@ -562,13 +573,13 @@ footer{
       <div class="step"><span class="when">this week</span><h4>Mark and monitor the cracks</h4>
         <p>Pencil-mark each crack tip with the date; measure widths. Growth past a mark, or any <b>new diagonal crack near a column</b>, gets reported the same day.</p></div>
       <div class="step"><span class="when">week 1–2</span><h4>Engineer's signed design</h4>
-        <p>TIPSTEP produces the jacket drawing and calculation. Check it against the target table in S-2 — especially end anchorage and the end-column check.</p></div>
+        <p>TIPSTEP produces the jacket drawing and calculation. Check it against the target table in S-2 — especially end anchorage, the <b>floating-column question</b>, and the end-column and footing checks.</p></div>
       <div class="step"><span class="when">week 2</span><h4>Surface preparation</h4>
         <p>Hack off loose cover on soffit and sides, roughen to ~5 mm amplitude, expose the existing stirrups, blow clean, and saturate the surface before casting day.</p></div>
       <div class="step"><span class="when">week 2</span><h4>Dowels and new cage</h4>
         <p>Drill and resin-set <b>T12 dowels @ 250 mm</b> into the old beam. Fix the new cage: 4 T20 bottom, side hangers, closed T8 links @ 150 (100 at ends). Spacers for 35 mm cover everywhere.</p></div>
-      <div class="step"><span class="when">week 2</span><h4>End anchorage collars</h4>
-        <p>Cast collars around both end columns and anchor the new bottom bars into them per Figs. 4 &amp; 6. <b>This step is the difference between a beam and a decoration.</b></p></div>
+      <div class="step"><span class="when">week 2</span><h4>Column jackets and end anchorage</h4>
+        <p>Jacket both end columns full height (footing to beam soffit, ≈ 350×350, 4T16 added verticals, T8 links, dowelled) — the top of each jacket is the collar the new beam bars anchor into per Figs. 4 &amp; 6. <b>This step is the difference between a beam and a decoration</b>, and it costs only a day or two extra while the crew and formwork are already there.</p></div>
       <div class="step"><span class="when">week 3</span><h4>Formwork and casting</h4>
         <p>Straight, tight forms — the flat soffit keeps this the simplest carpentry on site. Cast <b>C25/30, 10 mm aggregate, plasticised</b>, poured through the top via cored holes or a letterbox chute, vibrated well. Top up the final contact with the old soffit using a slightly expansive grout.</p></div>
       <div class="step"><span class="when">weeks 3–4</span><h4>Cure wet for 7 days</h4>
@@ -580,11 +591,17 @@ footer{
 
   <!-- ================= 4. END ANCHORAGE ================= -->
   <section>
-    <div class="sec-head"><span class="sec-num">S-4</span><h2>The detail that decides everything: end anchorage</h2></div>
+    <div class="sec-head"><span class="sec-num">S-4</span><h2>The detail that decides everything: the end columns</h2></div>
     <p>
-      A bottom bar resists bending only if its ends are gripped. If the new T20s simply stop at the column
-      faces, the jacket carries almost nothing and the money is wasted. The bars must be anchored
-      <b>into</b> the supports — the practical way is a reinforced collar cast around each end column.
+      Two things happen at each end of the beam, and both are load-bearing. First, <b>anchorage</b>: a
+      bottom bar resists bending only if its ends are gripped — the new T20s must be anchored <b>into</b>
+      the supports, not stopped at the column face. Second, <b>the columns themselves</b>: each 200 × 200
+      column now collects ≈ 140 kN of eccentric reaction it was never designed for, plus its existing
+      loads from the floors above. The default plan solves both at once: <b>jacket each column full height
+      to ≈ 350 × 350</b> (4T16 added verticals, T8 links, dowelled to the existing column, footing to beam
+      soffit) — the top of the jacket <i>is</i> the anchorage collar. The columns stay 200 × 200 only if
+      TIPSTEP's calculation proves them adequate under the new reaction and its eccentricity, and the
+      footings must be checked either way (≈ +70 kPa on the 1200 × 1200 pads).
     </p>
     <figure class="fig">
       <svg viewBox="0 0 640 330" role="img" aria-label="End anchorage detail: a reinforced concrete collar cast around the end column, with the jacket's new bottom bars bent up inside the collar to full anchorage, and the 140 kilonewton reaction shown at the column">
@@ -607,10 +624,11 @@ footer{
         <!-- jacket -->
         <path d="M164 106 L610 106 L610 176 L164 176 Z" fill="url(#newconc2)" stroke="#B4491B" stroke-width="2"/>
         <text x="400" y="146" text-anchor="middle" font-size="11.5" fill="currentColor">new jacket below and beside</text>
-        <!-- collar -->
-        <path d="M96 106 L164 106 L164 232 L96 232 Z" fill="url(#newconc2)" stroke="#B4491B" stroke-width="2"/>
-        <text x="76" y="256" font-size="11.5" fill="#B4491B" font-weight="600">reinforced collar,</text>
-        <text x="76" y="270" font-size="11.5" fill="#B4491B" font-weight="600">≥ 200 mm all round</text>
+        <!-- full-height column jacket, collar at top -->
+        <path d="M96 106 L164 106 L164 294 L96 294 Z" fill="url(#newconc2)" stroke="#B4491B" stroke-width="2"/>
+        <text x="30" y="250" font-size="11.5" fill="#B4491B" font-weight="600">full-height column</text>
+        <text x="30" y="264" font-size="11.5" fill="#B4491B" font-weight="600">jacket ≈ 350×350,</text>
+        <text x="30" y="278" font-size="11.5" fill="#B4491B" font-weight="600">footing to soffit</text>
         <!-- bottom bar bending up into collar -->
         <path d="M600 164 L150 164 Q126 164 126 188 L126 220" fill="none" stroke="#B4491B" stroke-width="4" stroke-linecap="round"/>
         <text x="360" y="196" text-anchor="middle" font-size="11.5" fill="#B4491B" font-weight="600">new T20 bottom bar, bent down into the collar — full anchorage length</text>
@@ -622,7 +640,7 @@ footer{
         <line x1="142" y1="322" x2="142" y2="300" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar4)"/>
         <text x="160" y="320" font-size="12" fill="currentColor" font-family="ui-monospace,monospace">≈ 140 kN reaction — column + footing to be checked</text>
       </svg>
-      <figcaption><b>Fig. 6 — end anchorage at each column, in elevation.</b> This is the vertical leg of the bars shown arriving in plan in Fig.&nbsp;4. The alternative — resin-anchoring the bars into holes drilled deep into the column — is acceptable only if the engineer shows full development length. Ask which one they are doing, in writing.</figcaption>
+      <figcaption><b>Fig. 6 — the end column, in elevation.</b> The jacket runs full height from footing to beam soffit; its top section is the collar the new beam bars bend down into (the vertical leg of the bars shown in plan in Fig.&nbsp;4). The alternative for anchorage alone — resin-anchoring the bars deep into the column — is acceptable only if the engineer shows full development length <i>and</i> proves the bare 200×200 column adequate. Ask which they are doing, in writing.</figcaption>
     </figure>
   </section>
 
@@ -675,8 +693,10 @@ footer{
     <ul class="check">
       <li>Jacket drawing shows a flat uniform section ≥ 300 × 650, bottom steel ≥ 4 T20 equivalent, and link spacing with the tighter zone at the ends.</li>
       <li>Designed as a flat <b>beam</b> — bars carry all tension. Any arched look is a cosmetic, non-structural fascia added after the repair, never a reshaping of the structural section.</li>
-      <li>End anchorage detail is drawn explicitly (collar or full-development resin anchors) — not left to the foreman.</li>
-      <li>End columns and their footings checked for the ≈ 140 kN reactions, in the calculation.</li>
+      <li>End anchorage detail is drawn explicitly (column-jacket collar or full-development resin anchors) — not left to the foreman.</li>
+      <li>The floating-column question answered in writing: do upper-floor front columns land on this beam? If yes, their point loads appear in the calculation.</li>
+      <li>End columns: full-height ≈ 350×350 jackets drawn, or a calculation proving the bare 200×200 columns adequate under the eccentric ≈ 140 kN reactions.</li>
+      <li>Footings at both end columns checked for the added ≈ 100 kN service load (≈ +70 kPa bearing); enlarged if the check fails.</li>
       <li>Wall loads in the calculation use <b>solid clay brick at ≈ 4.4 kN/m²</b>, not hollow block.</li>
       <li>Method statement includes propping + 3–5 mm lift before casting, and props kept 28 days after.</li>
       <li>Concrete: C25/30, 10 mm aggregate, plasticiser — and cubes taken on casting day.</li>
